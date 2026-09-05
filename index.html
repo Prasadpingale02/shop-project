@@ -119,6 +119,63 @@
     white-space:nowrap;
   }
 
+  /* ---------- Search + category nav ---------- */
+  .search-wrap{
+    max-width:640px; margin:0 auto; padding:12px 14px 0;
+  }
+  .search-box{
+    position:relative;
+  }
+  .search-box input{
+    width:100%;
+    padding:12px 14px 12px 38px;
+    border-radius:12px;
+    border:1px solid var(--paper-line);
+    background:#fff;
+    font-family:inherit;
+    font-size:0.92rem;
+    box-shadow:var(--shadow);
+  }
+  .search-box input:focus{
+    outline:none;
+    border-color:var(--green);
+  }
+  .search-box .icon{
+    position:absolute; left:13px; top:50%; transform:translateY(-50%);
+    color:var(--ink-soft); font-size:0.95rem; pointer-events:none;
+  }
+  .search-box .clear-btn{
+    position:absolute; right:8px; top:50%; transform:translateY(-50%);
+    background:none; border:none; color:var(--ink-soft); font-size:1.1rem;
+    padding:6px; cursor:pointer; display:none;
+  }
+  .search-box .clear-btn.show{ display:block; }
+
+  .cat-nav{
+    max-width:640px; margin:0 auto;
+    display:flex; gap:8px; overflow-x:auto;
+    padding:12px 14px 4px;
+    scrollbar-width:none;
+  }
+  .cat-nav::-webkit-scrollbar{ display:none; }
+  .cat-nav .chip{
+    flex:0 0 auto;
+    background:#fff;
+    border:1px solid var(--paper-line);
+    color:var(--green-dark);
+    font-size:0.78rem;
+    font-weight:700;
+    padding:7px 14px;
+    border-radius:999px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .cat-nav .chip.active{
+    background:var(--green);
+    border-color:var(--green);
+    color:#fff;
+  }
+
   /* ---------- Layout ---------- */
   main{ max-width:640px; margin:0 auto; padding:16px 14px 8px; }
   .category-title{
@@ -156,7 +213,17 @@
     display:flex;
     flex-direction:column;
     gap:8px;
+    position:relative;
   }
+  .card .in-cart-badge{
+    position:absolute; top:-8px; right:-6px;
+    background:var(--brick); color:#fff;
+    font-size:0.68rem; font-weight:800;
+    padding:3px 8px; border-radius:999px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.2);
+    display:none;
+  }
+  .card .in-cart-badge.show{ display:block; }
   @media(hover:hover){
     .card{ transition:box-shadow .15s ease, transform .15s ease; }
     .card:hover{ box-shadow:0 4px 16px rgba(33,29,20,0.14); transform:translateY(-1px); }
@@ -225,6 +292,24 @@
     padding:40px 10px;
     font-size:0.9rem;
   }
+  .empty-msg .big-emoji{ font-size:2rem; display:block; margin-bottom:8px; }
+
+  /* ---------- Skeleton loading ---------- */
+  .skeleton-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  }
+  @media(min-width:520px){ .skeleton-grid{ grid-template-columns:1fr 1fr 1fr; } }
+  .skeleton-card{
+    background:var(--card); border:1px solid var(--paper-line); border-radius:var(--radius);
+    padding:12px; box-shadow:var(--shadow); height:150px;
+  }
+  .skel-line{
+    background:linear-gradient(90deg, #EFE9D4 25%, #F7F2E2 37%, #EFE9D4 63%);
+    background-size:400% 100%;
+    animation:skel-shimmer 1.3s ease infinite;
+    border-radius:6px;
+  }
+  @keyframes skel-shimmer{ 0%{ background-position:100% 50%; } 100%{ background-position:0 50%; } }
 
   /* ---------- Sticky cart bar ----------
      Floats clear of the screen edges (rather than running edge-to-edge)
@@ -316,6 +401,18 @@
     font-family:inherit; font-size:0.92rem; background:#fff;
   }
   .form-group textarea{ resize:vertical; min-height:60px; }
+
+  .order-summary-box{
+    background:#FAF8F1; border:1px solid var(--paper-line); border-radius:11px;
+    padding:12px 14px; margin-bottom:16px;
+  }
+  .order-summary-box .os-title{ font-weight:700; font-size:0.82rem; color:var(--green-dark); margin-bottom:8px; }
+  .order-summary-box .os-line{ display:flex; justify-content:space-between; font-size:0.8rem; padding:3px 0; color:var(--ink-soft); }
+  .order-summary-box .os-line span:first-child{ padding-right:8px; }
+  .order-summary-box .os-total{
+    display:flex; justify-content:space-between; font-weight:800; color:var(--green-dark);
+    font-size:0.9rem; margin-top:6px; padding-top:8px; border-top:1px dashed var(--paper-line);
+  }
   .form-hint{ font-size:0.72rem; color:var(--ink-soft); margin-top:4px; }
   .pay-note{
     background:#FFF6E4; border:1px solid #F0DBA1; padding:9px 11px; border-radius:9px;
@@ -414,8 +511,25 @@
   <div class="item">💳 Cash, UPI or pay at pickup</div>
 </div>
 
+<div class="search-wrap">
+  <div class="search-box">
+    <span class="icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="Search for atta, dal, oil…" oninput="onSearchInput()" />
+    <button class="clear-btn" id="searchClearBtn" onclick="clearSearch()">✕</button>
+  </div>
+</div>
+
+<div class="cat-nav" id="catNav" style="display:none;"></div>
+
 <main>
-  <div id="app-loading">Loading today's stock…</div>
+  <div id="app-loading">
+    <div class="skeleton-grid">
+      <div class="skeleton-card"><div class="skel-line" style="height:12px;width:60%;margin-bottom:10px;"></div><div class="skel-line" style="height:16px;width:85%;margin-bottom:14px;"></div><div class="skel-line" style="height:20px;width:50%;margin-bottom:14px;"></div><div class="skel-line" style="height:30px;width:100%;"></div></div>
+      <div class="skeleton-card"><div class="skel-line" style="height:12px;width:60%;margin-bottom:10px;"></div><div class="skel-line" style="height:16px;width:85%;margin-bottom:14px;"></div><div class="skel-line" style="height:20px;width:50%;margin-bottom:14px;"></div><div class="skel-line" style="height:30px;width:100%;"></div></div>
+      <div class="skeleton-card"><div class="skel-line" style="height:12px;width:60%;margin-bottom:10px;"></div><div class="skel-line" style="height:16px;width:85%;margin-bottom:14px;"></div><div class="skel-line" style="height:20px;width:50%;margin-bottom:14px;"></div><div class="skel-line" style="height:30px;width:100%;"></div></div>
+      <div class="skeleton-card"><div class="skel-line" style="height:12px;width:60%;margin-bottom:10px;"></div><div class="skel-line" style="height:16px;width:85%;margin-bottom:14px;"></div><div class="skel-line" style="height:20px;width:50%;margin-bottom:14px;"></div><div class="skel-line" style="height:30px;width:100%;"></div></div>
+    </div>
+  </div>
   <div id="catalog"></div>
 
   <div class="testimonials" id="testimonialsSection" style="display:none;">
@@ -438,7 +552,7 @@
 <!-- Sticky cart bar -->
 <div class="cart-bar" id="cartBar">
   <div class="info">
-    <span id="cartCount">0</span> item(s)<br>
+    🛒 <span id="cartCount">0</span> item(s)<br>
     <span class="amt">₹<span id="cartTotalMini">0</span></span>
   </div>
   <button onclick="openCart()">View Cart</button>
@@ -451,7 +565,7 @@
       <button class="close-x" onclick="closeOverlay('cartOverlay')">✕</button>
       <h2>Your Cart</h2>
       <div id="cartLines"></div>
-      <div id="cartEmptyMsg" class="empty-msg" style="display:none;">Your cart is empty. Add items to get started.</div>
+      <div id="cartEmptyMsg" class="empty-msg" style="display:none;"><span class="big-emoji">🛒</span>Your cart is empty. Add items to get started.</div>
       <div class="cart-total-row" id="cartTotalRow" style="display:none;">
         <span>Total</span><span>₹<span id="cartTotalFull">0</span></span>
       </div>
@@ -467,6 +581,8 @@
       <button class="close-x" onclick="closeOverlay('checkoutOverlay')">✕</button>
       <h2>Checkout</h2>
       <div class="error-box" id="checkoutError"></div>
+
+      <div class="order-summary-box" id="checkoutSummary"></div>
 
       <div class="form-group">
         <label for="custName">Your Name</label>
@@ -595,10 +711,38 @@
   function saveCart(){
     localStorage.setItem('pp_cart', JSON.stringify(CART));
     renderCartBar();
+    updateAllCartBadges();
   }
 
   function rupees(n){
     return Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function slugify(str){
+    return String(str).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  }
+
+  // ================= SEARCH =================
+  let searchTerm = '';
+
+  function onSearchInput(){
+    searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+    document.getElementById('searchClearBtn').classList.toggle('show', searchTerm.length > 0);
+    renderCatalog();
+  }
+
+  function clearSearch(){
+    searchTerm = '';
+    document.getElementById('searchInput').value = '';
+    document.getElementById('searchClearBtn').classList.remove('show');
+    renderCatalog();
+  }
+
+  function jumpToCategory(cat, chipEl){
+    document.querySelectorAll('#catNav .chip').forEach(c => c.classList.remove('active'));
+    chipEl.classList.add('active');
+    const target = document.getElementById('cat-' + slugify(cat));
+    if (target) target.scrollIntoView({ behavior:'smooth', block:'start' });
   }
 
   // ================= LOAD PRODUCTS (LIVE FROM SUPABASE) =================
@@ -615,24 +759,52 @@
 
     if (error) {
       document.getElementById('catalog').innerHTML =
-        `<div class="empty-msg">Could not load products right now.<br>${error.message}</div>`;
+        `<div class="empty-msg"><span class="big-emoji">😕</span>Could not load products right now.<br>${escapeHtml(error.message)}</div>`;
       return;
     }
 
     PRODUCTS = data || [];
+    renderCatNav();
     renderCatalog();
     renderCartBar();
+  }
+
+  function renderCatNav(){
+    const nav = document.getElementById('catNav');
+    if (!PRODUCTS.length){ nav.style.display = 'none'; return; }
+    const cats = [...new Set(PRODUCTS.map(p => p.category || 'General'))];
+    if (cats.length < 2){ nav.style.display = 'none'; return; }
+    nav.innerHTML = cats.map((c, i) =>
+      `<span class="chip${i === 0 ? ' active' : ''}" data-cat="${escapeHtml(c)}" onclick="jumpToCategory(this.dataset.cat, this)">${escapeHtml(c)}</span>`
+    ).join('');
+    nav.style.display = 'flex';
   }
 
   function renderCatalog(){
     const root = document.getElementById('catalog');
     if (!PRODUCTS.length){
-      root.innerHTML = `<div class="empty-msg">No products available right now. Please check back soon.</div>`;
+      root.innerHTML = `<div class="empty-msg"><span class="big-emoji">🧺</span>No products available right now. Please check back soon.</div>`;
+      return;
+    }
+
+    const filtered = searchTerm
+      ? PRODUCTS.filter(p =>
+          (p.name || '').toLowerCase().includes(searchTerm) ||
+          (p.category || '').toLowerCase().includes(searchTerm))
+      : PRODUCTS;
+
+    if (!filtered.length){
+      root.innerHTML = `
+        <div class="empty-msg">
+          <span class="big-emoji">🔍</span>
+          No items match "${escapeHtml(searchTerm)}".<br>
+          <a href="javascript:void(0)" onclick="clearSearch()" style="color:var(--green-dark); font-weight:700;">Clear search</a>
+        </div>`;
       return;
     }
 
     const byCategory = {};
-    PRODUCTS.forEach(p => {
+    filtered.forEach(p => {
       const c = p.category || 'General';
       if (!byCategory[c]) byCategory[c] = [];
       byCategory[c].push(p);
@@ -640,16 +812,32 @@
 
     let html = '';
     Object.keys(byCategory).forEach(cat => {
-      html += `<div class="category-title">${escapeHtml(cat)}</div><div class="grid">`;
+      html += `<div class="category-title" id="cat-${slugify(cat)}">${escapeHtml(cat)}</div><div class="grid">`;
       byCategory[cat].forEach(p => { html += productCardHtml(p); });
       html += `</div>`;
     });
     root.innerHTML = html;
+    updateAllCartBadges();
+  }
+
+  function updateAllCartBadges(){
+    PRODUCTS.forEach(p => {
+      const el = document.getElementById(`cart-badge-${p.id}`);
+      if (!el) return;
+      const count = CART.filter(l => l.product_id === p.id).length;
+      if (count > 0){
+        el.textContent = count === 1 ? '1 in cart' : `${count} in cart`;
+        el.classList.add('show');
+      } else {
+        el.classList.remove('show');
+      }
+    });
   }
 
   function productCardHtml(p){
     const mrpHtml = (p.mrp && p.mrp > p.price)
       ? `<span class="mrp">₹${rupees(p.mrp)}</span>` : '';
+    const badgeHtml = `<span class="in-cart-badge" id="cart-badge-${p.id}"></span>`;
 
     if (p.pricing_type === 'By-Weight'){
       const options = WEIGHT_OPTIONS.map(o =>
@@ -657,6 +845,7 @@
       ).join('');
       return `
         <div class="card">
+          ${badgeHtml}
           <div class="pcat">${escapeHtml(p.category||'')}</div>
           <div class="pname">${escapeHtml(p.name)}</div>
           <div class="price-row"><span class="price">₹${rupees(p.price)}</span><span class="unit-note">/ ${escapeHtml(p.unit)}</span> ${mrpHtml}</div>
@@ -666,6 +855,7 @@
     } else {
       return `
         <div class="card">
+          ${badgeHtml}
           <div class="pcat">${escapeHtml(p.category||'')}</div>
           <div class="pname">${escapeHtml(p.name)}</div>
           <div class="price-row"><span class="price">₹${rupees(p.price)}</span><span class="unit-note">/ ${escapeHtml(p.unit)}</span> ${mrpHtml}</div>
@@ -798,9 +988,19 @@
     document.getElementById('cartOverlay').classList.add('show');
   }
   function closeOverlay(id){ document.getElementById(id).classList.remove('show'); }
+  function renderCheckoutSummary(){
+    const box = document.getElementById('checkoutSummary');
+    box.innerHTML = `
+      <div class="os-title">Order Summary (${CART.length} item${CART.length === 1 ? '' : 's'})</div>
+      ${CART.map(l => `<div class="os-line"><span>${escapeHtml(l.product_name)} (${escapeHtml(l.unit_label)})</span><span>₹${rupees(l.line_total)}</span></div>`).join('')}
+      <div class="os-total"><span>Total</span><span>₹${rupees(cartTotal())}</span></div>
+    `;
+  }
+
   function openCheckout(){
     if (!CART.length) return;
     populatePickupSlots();
+    renderCheckoutSummary();
     closeOverlay('cartOverlay');
     document.getElementById('checkoutOverlay').classList.add('show');
   }
