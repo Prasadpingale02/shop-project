@@ -94,6 +94,30 @@
     font-size:0.78rem;
     font-weight:600;
   }
+  header.shop .hours-pill.closed{
+    background:rgba(193,68,45,0.25);
+    border-color:rgba(255,255,255,0.4);
+  }
+
+  /* ---------- Trust strip ---------- */
+  .trust-strip{
+    max-width:640px; margin:0 auto;
+    display:flex; gap:8px;
+    padding:12px 14px 0;
+    overflow-x:auto;
+  }
+  .trust-strip .item{
+    flex:1 0 auto;
+    background:var(--card);
+    border:1px solid var(--paper-line);
+    border-radius:11px;
+    padding:9px 12px;
+    font-size:0.74rem;
+    font-weight:600;
+    color:var(--green-dark);
+    display:flex; align-items:center; gap:6px;
+    white-space:nowrap;
+  }
 
   /* ---------- Layout ---------- */
   main{ max-width:640px; margin:0 auto; padding:16px 14px 8px; }
@@ -132,6 +156,10 @@
     display:flex;
     flex-direction:column;
     gap:8px;
+  }
+  @media(hover:hover){
+    .card{ transition:box-shadow .15s ease, transform .15s ease; }
+    .card:hover{ box-shadow:0 4px 16px rgba(33,29,20,0.14); transform:translateY(-1px); }
   }
   .card .pname{ font-weight:700; font-size:0.94rem; line-height:1.2; }
   .card .pcat{ font-size:0.7rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px;}
@@ -198,17 +226,22 @@
     font-size:0.9rem;
   }
 
-  /* ---------- Sticky cart bar ---------- */
+  /* ---------- Sticky cart bar ----------
+     Floats clear of the screen edges (rather than running edge-to-edge)
+     so it can never sit under a corner-docked overlay such as a hosting
+     provider's badge, and carries a very high z-index for the same reason. */
   .cart-bar{
-    position:fixed; left:0; right:0; bottom:0;
+    position:fixed; left:14px; right:14px; bottom:14px;
     background:var(--ink);
     color:#fff;
     padding:12px 16px;
     display:none;
     align-items:center;
     justify-content:space-between;
-    z-index:40;
-    box-shadow:0 -4px 14px rgba(0,0,0,0.25);
+    z-index:2147483000;
+    border-radius:14px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.35);
+    padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px));
   }
   .cart-bar.show{ display:flex; }
   .cart-bar .info{ font-size:0.85rem; color:#DAD6C6; }
@@ -231,7 +264,7 @@
     display:none;
     align-items:flex-end;
     justify-content:center;
-    z-index:60;
+    z-index:2147483600;
   }
   .overlay.show{ display:flex; }
   .sheet{
@@ -329,6 +362,38 @@
   .footer-note{ font-size:0.76rem; color:var(--ink-soft); margin-top:10px; line-height:1.5; }
 
   #app-loading{ text-align:center; padding:50px 20px; color:var(--ink-soft); font-size:0.9rem; }
+
+  /* ---------- Testimonials ---------- */
+  .testimonials{ margin-top:8px; }
+  .testimonials .t-scroll{
+    display:flex; gap:10px; overflow-x:auto; padding-bottom:4px;
+  }
+  .t-card{
+    background:var(--card); border:1px solid var(--paper-line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:12px 14px; min-width:230px; max-width:230px; flex:0 0 auto;
+  }
+  .t-card .stars{ color:var(--marigold-dark); font-size:0.85rem; letter-spacing:1px; }
+  .t-card .t-comment{ font-size:0.8rem; color:var(--ink); margin:6px 0; line-height:1.4; }
+  .t-card .t-name{ font-size:0.72rem; color:var(--ink-soft); font-weight:700; }
+
+  /* ---------- Star rating input ---------- */
+  .star-input{ display:flex; gap:4px; font-size:1.7rem; line-height:1; margin:2px 0 4px; }
+  .star-input .star{ cursor:pointer; color:#D8D0B4; transition:color .1s ease; user-select:none; }
+  .star-input .star.filled{ color:var(--marigold-dark); }
+
+  /* ---------- Footer ---------- */
+  footer.site-footer{
+    max-width:640px; margin:26px auto 0; padding:20px 14px 10px;
+    border-top:1px solid var(--paper-line);
+    font-size:0.8rem; color:var(--ink-soft);
+  }
+  footer.site-footer .f-shop{ font-family:'Baloo 2',cursive; color:var(--green-dark); font-weight:700; font-size:1.05rem; margin-bottom:4px;}
+  footer.site-footer a.f-link{
+    color:var(--green-dark); font-weight:700; text-decoration:none;
+  }
+  footer.site-footer .f-row{ margin:4px 0; }
+  footer.site-footer .f-actions{ margin-top:12px; display:flex; gap:14px; flex-wrap:wrap; }
+  footer.site-footer .f-copy{ margin-top:16px; font-size:0.7rem; color:#9a927a; }
 </style>
 </head>
 <body>
@@ -340,13 +405,35 @@
     <div>📍 Near Old Police Station, Ganpati Galli, Kasoda, Maharashtra – 425110</div>
     <div>📞 Call: <a href="tel:9011402307">9011402307</a> &nbsp;|&nbsp; 💬 WhatsApp: <a href="https://wa.me/919834456597" target="_blank">9834456597</a></div>
   </div>
-  <span class="hours-pill">Open daily · 8:00 AM – 9:00 PM</span>
+  <span class="hours-pill" id="hoursPill">Open daily · 8:00 AM – 9:00 PM</span>
 </header>
+
+<div class="trust-strip">
+  <div class="item">🌾 Fresh stock, restocked daily</div>
+  <div class="item">⚖️ Honest weights, no shortchange</div>
+  <div class="item">💳 Cash, UPI or pay at pickup</div>
+</div>
 
 <main>
   <div id="app-loading">Loading today's stock…</div>
   <div id="catalog"></div>
+
+  <div class="testimonials" id="testimonialsSection" style="display:none;">
+    <div class="category-title">What customers are saying</div>
+    <div class="t-scroll" id="testimonialsScroll"></div>
+  </div>
 </main>
+
+<footer class="site-footer">
+  <div class="f-shop">Pingale Provisions</div>
+  <div class="f-row">📍 Near Old Police Station, Ganpati Galli, Kasoda, Maharashtra – 425110</div>
+  <div class="f-row">📞 <a class="f-link" href="tel:9011402307">9011402307</a> &nbsp;·&nbsp; 💬 <a class="f-link" href="https://wa.me/919834456597" target="_blank">WhatsApp</a></div>
+  <div class="f-row">🕒 Open daily, 8:00 AM – 9:00 PM</div>
+  <div class="f-actions">
+    <a class="f-link" href="javascript:void(0)" onclick="openReview()">★ Rate a recent order</a>
+  </div>
+  <div class="f-copy">© <span id="fYear"></span> Pingale Provisions. All rights reserved.</div>
+</footer>
 
 <!-- Sticky cart bar -->
 <div class="cart-bar" id="cartBar">
@@ -390,9 +477,12 @@
         <input type="tel" id="custPhone" maxlength="10" placeholder="10-digit mobile number" />
       </div>
       <div class="form-group">
-        <label for="pickupSlot">Pickup Time (8:00 AM – 9:00 PM)</label>
-        <input type="time" id="pickupSlot" min="08:00" max="21:00" />
-        <div class="form-hint">Everything is ready stock — no waiting, we pack it fresh when you arrive.</div>
+        <label for="pickupSlot">Pickup Time</label>
+        <select id="pickupSlot">
+          <option value="">Select a pickup time…</option>
+        </select>
+        <div class="form-hint" id="pickupSlotNote" style="display:none;"></div>
+        <div class="form-hint">Only times within our opening hours are shown — everything is ready stock, so we pack it fresh when you arrive.</div>
       </div>
       <div class="form-group">
         <label for="paymentMethod">Payment Method</label>
@@ -433,6 +523,53 @@
       <div id="qrcode-box"></div>
       <p class="footer-note">Show this order number (or the QR code) at the counter when you arrive at<br><b>Pingale Provisions, Ganpati Galli, Kasoda</b>.</p>
       <button class="secondary-btn" onclick="startNewOrder()">Place Another Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- Review sheet -->
+<div class="overlay" id="reviewOverlay">
+  <div class="sheet">
+    <div class="sheet-inner" id="reviewSheetInner">
+      <button class="close-x" onclick="closeOverlay('reviewOverlay')">✕</button>
+      <h2>Rate Your Order</h2>
+      <div class="error-box" id="reviewError"></div>
+
+      <div class="form-group">
+        <label for="reviewOrderNumber">Order Number</label>
+        <input type="text" id="reviewOrderNumber" placeholder="e.g. PP-050926-1234" />
+        <div class="form-hint">Found on your order confirmation or WhatsApp message.</div>
+      </div>
+      <div class="form-group">
+        <label for="reviewName">Your Name</label>
+        <input type="text" id="reviewName" placeholder="e.g. Ramesh Pingale" />
+      </div>
+      <div class="form-group">
+        <label for="reviewPhone">Mobile Number</label>
+        <input type="tel" id="reviewPhone" maxlength="10" placeholder="10-digit mobile number" />
+      </div>
+      <div class="form-group">
+        <label>Your Rating</label>
+        <div class="star-input" id="reviewStars">
+          <span class="star" data-val="1">★</span>
+          <span class="star" data-val="2">★</span>
+          <span class="star" data-val="3">★</span>
+          <span class="star" data-val="4">★</span>
+          <span class="star" data-val="5">★</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="reviewComment">Tell us about your experience</label>
+        <textarea id="reviewComment" placeholder="e.g. Fresh vegetables and quick pickup!"></textarea>
+      </div>
+
+      <button class="primary-btn" id="submitReviewBtn" onclick="submitReview()">Submit Review</button>
+    </div>
+    <div class="sheet-inner confirm-wrap" id="reviewThanksInner" style="display:none;">
+      <div class="tick">✓</div>
+      <h2>Thank You!</h2>
+      <p class="footer-note">Your feedback helps us serve the neighbourhood better. We really appreciate you taking the time.</p>
+      <button class="secondary-btn" onclick="closeOverlay('reviewOverlay')">Close</button>
     </div>
   </div>
 </div>
@@ -663,12 +800,84 @@
   function closeOverlay(id){ document.getElementById(id).classList.remove('show'); }
   function openCheckout(){
     if (!CART.length) return;
+    populatePickupSlots();
     closeOverlay('cartOverlay');
     document.getElementById('checkoutOverlay').classList.add('show');
   }
   function onPaymentChange(){
     const val = document.getElementById('paymentMethod').value;
     document.getElementById('advanceUpiNote').classList.toggle('show', val === 'Advance UPI');
+  }
+
+  // ================= SHOP HOURS / PICKUP SLOTS =================
+  // Single source of truth for opening hours — change these two lines if hours ever change.
+  const SHOP_OPEN_MINUTES  = 8 * 60;        // 8:00 AM
+  const SHOP_CLOSE_MINUTES = 21 * 60;       // 9:00 PM
+  const SLOT_STEP_MINUTES  = 30;            // pickup slots offered every 30 minutes
+  const PREP_BUFFER_MINUTES = 20;           // minimum lead time so staff can pack the order
+
+  function minsToHHMM(m){
+    const h = Math.floor(m / 60), mm = m % 60;
+    return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+  }
+
+  // Works out which pickup slots are valid right now. If there's no time left
+  // today within opening hours, it offers tomorrow's slots instead — the
+  // customer is never able to select a time when the shop is closed.
+  function buildPickupSlots(){
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+    let earliest = Math.max(SHOP_OPEN_MINUTES, nowMinutes + PREP_BUFFER_MINUTES);
+    earliest = Math.ceil(earliest / SLOT_STEP_MINUTES) * SLOT_STEP_MINUTES;
+
+    let forTomorrow = false;
+    if (earliest > SHOP_CLOSE_MINUTES){
+      forTomorrow = true;
+      earliest = SHOP_OPEN_MINUTES;
+    }
+
+    const slots = [];
+    for (let m = earliest; m <= SHOP_CLOSE_MINUTES; m += SLOT_STEP_MINUTES){
+      slots.push(m);
+    }
+    return { slots, forTomorrow };
+  }
+
+  function isShopOpenNow(){
+    const nowMinutes = new Date().getHours() * 60 + new Date().getMinutes();
+    return nowMinutes >= SHOP_OPEN_MINUTES && nowMinutes <= SHOP_CLOSE_MINUTES;
+  }
+
+  function refreshHoursPill(){
+    const pill = document.getElementById('hoursPill');
+    if (!pill) return;
+    if (isShopOpenNow()){
+      pill.textContent = 'Open now · 8:00 AM – 9:00 PM';
+      pill.classList.remove('closed');
+    } else {
+      pill.textContent = 'Closed now · Opens 8:00 AM';
+      pill.classList.add('closed');
+    }
+  }
+
+  function populatePickupSlots(){
+    const sel = document.getElementById('pickupSlot');
+    const note = document.getElementById('pickupSlotNote');
+    const { slots, forTomorrow } = buildPickupSlots();
+
+    sel.innerHTML = '<option value="">Select a pickup time…</option>' +
+      slots.map(m => {
+        const hhmm = minsToHHMM(m);
+        return `<option value="${hhmm}">${formatSlotForDisplay(hhmm)}${forTomorrow ? ' (tomorrow)' : ''}</option>`;
+      }).join('');
+
+    if (forTomorrow){
+      note.textContent = "We're closed right now, so these times are for tomorrow's pickup.";
+      note.style.display = 'block';
+    } else {
+      note.style.display = 'none';
+    }
   }
 
   // ================= CHECKOUT / ORDER PLACEMENT =================
@@ -690,13 +899,6 @@
     return `PP-${dd}${mm}${yy}-${rand}`;
   }
 
-  function isValidPickupTime(hhmm){
-    if (!/^\d{2}:\d{2}$/.test(hhmm)) return false;
-    const [h,m] = hhmm.split(':').map(Number);
-    const mins = h*60+m;
-    return mins >= (8*60) && mins <= (21*60);
-  }
-
   function formatSlotForDisplay(hhmm){
     const [h,m] = hhmm.split(':').map(Number);
     const period = h >= 12 ? 'PM' : 'AM';
@@ -716,7 +918,7 @@
 
     if (!name) return showCheckoutError('Please enter your name.');
     if (!/^\d{10}$/.test(phone)) return showCheckoutError('Please enter a valid 10-digit mobile number.');
-    if (!slot || !isValidPickupTime(slot)) return showCheckoutError('Please choose a pickup time between 8:00 AM and 9:00 PM.');
+    if (!slot) return showCheckoutError('Please choose a pickup time.');
     if (!CART.length) return showCheckoutError('Your cart is empty.');
 
     const btn = document.getElementById('placeOrderBtn');
@@ -802,6 +1004,98 @@
     closeOverlay('confirmOverlay');
   }
 
+  // ================= REVIEWS =================
+  let selectedRating = 0;
+
+  function setupStarInput(){
+    const stars = document.querySelectorAll('#reviewStars .star');
+    stars.forEach(star => {
+      star.addEventListener('click', () => {
+        selectedRating = parseInt(star.dataset.val, 10);
+        paintStars();
+      });
+    });
+  }
+
+  function paintStars(){
+    document.querySelectorAll('#reviewStars .star').forEach(star => {
+      star.classList.toggle('filled', parseInt(star.dataset.val, 10) <= selectedRating);
+    });
+  }
+
+  function openReview(prefillOrderNumber){
+    document.getElementById('reviewSheetInner').style.display = '';
+    document.getElementById('reviewThanksInner').style.display = 'none';
+    document.getElementById('reviewError').classList.remove('show');
+    selectedRating = 0;
+    paintStars();
+    if (prefillOrderNumber){
+      document.getElementById('reviewOrderNumber').value = prefillOrderNumber;
+    }
+    document.getElementById('reviewOverlay').classList.add('show');
+  }
+
+  async function submitReview(){
+    const errBox = document.getElementById('reviewError');
+    errBox.classList.remove('show');
+
+    const orderNumber = document.getElementById('reviewOrderNumber').value.trim();
+    const name = document.getElementById('reviewName').value.trim();
+    const phone = document.getElementById('reviewPhone').value.trim();
+    const comment = document.getElementById('reviewComment').value.trim();
+
+    if (!orderNumber){ errBox.textContent = 'Please enter your order number.'; errBox.classList.add('show'); return; }
+    if (!name){ errBox.textContent = 'Please enter your name.'; errBox.classList.add('show'); return; }
+    if (!/^\d{10}$/.test(phone)){ errBox.textContent = 'Please enter a valid 10-digit mobile number.'; errBox.classList.add('show'); return; }
+    if (!selectedRating){ errBox.textContent = 'Please select a star rating.'; errBox.classList.add('show'); return; }
+
+    const btn = document.getElementById('submitReviewBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+
+    const { error } = await sb.from('reviews').insert({
+      order_number: orderNumber,
+      customer_name: name,
+      customer_phone: phone,
+      rating: selectedRating,
+      comment: comment || null
+    });
+
+    btn.disabled = false;
+    btn.textContent = 'Submit Review';
+
+    if (error){
+      errBox.textContent = 'Could not submit review: ' + error.message;
+      errBox.classList.add('show');
+      return;
+    }
+
+    document.getElementById('reviewSheetInner').style.display = 'none';
+    document.getElementById('reviewThanksInner').style.display = '';
+  }
+
+  async function loadTestimonials(){
+    const { data, error } = await sb
+      .from('reviews')
+      .select('*')
+      .eq('approved', true)
+      .order('created_at', { ascending: false })
+      .limit(6);
+
+    if (error || !data || !data.length) return; // fail quietly — testimonials are a nice-to-have
+
+    const section = document.getElementById('testimonialsSection');
+    const scroll = document.getElementById('testimonialsScroll');
+    scroll.innerHTML = data.map(r => `
+      <div class="t-card">
+        <div class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
+        ${r.comment ? `<div class="t-comment">${escapeHtml(r.comment)}</div>` : ''}
+        <div class="t-name">— ${escapeHtml(r.customer_name)}</div>
+      </div>
+    `).join('');
+    section.style.display = '';
+  }
+
   function escapeHtml(str){
     return String(str).replace(/[&<>"']/g, s => ({
       '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
@@ -811,6 +1105,19 @@
   // ================= INIT =================
   onPaymentChange();
   loadProducts();
+  loadTestimonials();
+  setupStarInput();
+  refreshHoursPill();
+  setInterval(refreshHoursPill, 60000);
+  document.getElementById('fYear').textContent = new Date().getFullYear();
+
+  // If a customer arrives via a "how was your order?" WhatsApp link
+  // (?review=ORDER_NUMBER), open the review sheet pre-filled for them.
+  (function openReviewFromLink(){
+    const params = new URLSearchParams(window.location.search);
+    const orderNumber = params.get('review');
+    if (orderNumber) openReview(orderNumber);
+  })();
 </script>
 </body>
 </html>
