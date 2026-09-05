@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pingale Provisions — Order for Pickup</title>
+
+<!-- ======================================================================
+     SUPABASE CONFIGURATION
+     Get these two values from your Supabase project:
+     Project URL   -> Project Settings -> API -> Project URL
+     anon/public key -> Project Settings -> API -> Project API keys -> anon public
+     The anon key is MEANT to be public/visible in frontend code — it is
+     safe because access is controlled entirely by Row Level Security (RLS)
+     policies in the database, not by hiding this key.
+     Never put the "service_role" key here or in any frontend file.
+====================================================================== -->
+<script>
+  const SUPABASE_URL = "https://chbpiocnrrznwjoogthm.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoYnBpb2NucnJ6bndqb29ndGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNjI1MDIsImV4cCI6MjEwMzgzODUwMn0.1F58E21gqaZtcA1vaW3Zq9wF9eUJ9D1gvXbdIGCsvI4";
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --paper:#FBF4DE;
+    --paper-line:#E7DEC4;
+    --ink:#211D14;
+    --ink-soft:#5B5540;
+    --green:#2F6E4F;
+    --green-dark:#1F4B3A;
+    --marigold:#F2A93B;
+    --marigold-dark:#C9860F;
+    --brick:#C1442D;
+    --card:#FFFFFF;
+    --radius:14px;
+    --shadow:0 2px 10px rgba(33,29,20,0.08);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    padding-bottom:96px;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit;}
+
+  /* ---------- Header / shop signboard ---------- */
+  header.shop{
+    background:linear-gradient(180deg,var(--green) 0%, var(--green-dark) 100%);
+    color:#fff;
+    padding:22px 18px 18px;
+    border-bottom:6px solid var(--marigold);
+  }
+  header.shop .name{
+    font-family:'Baloo 2',cursive;
+    font-weight:800;
+    font-size:1.9rem;
+    letter-spacing:0.3px;
+    margin:0;
+    line-height:1.1;
+  }
+  header.shop .tagline{
+    font-size:0.8rem;
+    color:var(--marigold);
+    font-weight:600;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    margin:2px 0 12px;
+  }
+  header.shop .meta{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    font-size:0.86rem;
+    color:#EDF5EF;
+  }
+  header.shop .meta strong{ color:#fff; }
+  header.shop .meta a{ text-decoration:none; color:#fff; font-weight:600;}
+  header.shop .hours-pill{
+    display:inline-block;
+    margin-top:10px;
+    background:rgba(255,255,255,0.14);
+    border:1px solid rgba(255,255,255,0.35);
+    padding:5px 12px;
+    border-radius:999px;
+    font-size:0.78rem;
+    font-weight:600;
+  }
+
+  /* ---------- Layout ---------- */
+  main{ max-width:640px; margin:0 auto; padding:16px 14px 8px; }
+  .category-title{
+    font-family:'Baloo 2',cursive;
+    font-size:1.15rem;
+    font-weight:700;
+    color:var(--green-dark);
+    margin:22px 0 10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .category-title::before{
+    content:"";
+    width:8px;height:8px;border-radius:50%;
+    background:var(--marigold);
+    display:inline-block;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  @media(min-width:520px){
+    .grid{ grid-template-columns:1fr 1fr 1fr; }
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--paper-line);
+    border-radius:var(--radius);
+    padding:12px;
+    box-shadow:var(--shadow);
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .card .pname{ font-weight:700; font-size:0.94rem; line-height:1.2; }
+  .card .pcat{ font-size:0.7rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px;}
+  .card .price-row{ display:flex; align-items:baseline; gap:6px; margin-top:2px;}
+  .card .price{ font-weight:700; color:var(--green-dark); font-size:1.02rem;}
+  .card .mrp{ font-size:0.78rem; color:#9a927a; text-decoration:line-through; }
+  .card .unit-note{ font-size:0.72rem; color:var(--ink-soft); }
+
+  select.weight-select, input.qty-input{
+    width:100%;
+    padding:7px 8px;
+    border-radius:8px;
+    border:1px solid var(--paper-line);
+    font-family:inherit;
+    font-size:0.85rem;
+    background:#fff;
+  }
+  .qty-row{ display:flex; align-items:center; gap:6px; }
+  .stepper{
+    display:flex; align-items:center; gap:0;
+    border:1px solid var(--paper-line);
+    border-radius:8px;
+    overflow:hidden;
+  }
+  .stepper button{
+    background:#F3EEDC;
+    border:none;
+    width:30px; height:32px;
+    font-size:1rem;
+    font-weight:700;
+    color:var(--green-dark);
+    cursor:pointer;
+  }
+  .stepper input{
+    width:38px;
+    text-align:center;
+    border:none;
+    border-left:1px solid var(--paper-line);
+    border-right:1px solid var(--paper-line);
+    height:32px;
+    font-family:inherit;
+    font-weight:600;
+  }
+
+  .add-btn{
+    margin-top:2px;
+    background:var(--green);
+    color:#fff;
+    border:none;
+    padding:9px 10px;
+    border-radius:9px;
+    font-weight:700;
+    font-size:0.85rem;
+    cursor:pointer;
+    transition:transform .08s ease, background .15s ease;
+  }
+  .add-btn:active{ transform:scale(0.97); }
+  .add-btn.added{ background:var(--marigold-dark); }
+
+  .empty-msg, .loading-msg{
+    text-align:center;
+    color:var(--ink-soft);
+    padding:40px 10px;
+    font-size:0.9rem;
+  }
+
+  /* ---------- Sticky cart bar ---------- */
+  .cart-bar{
+    position:fixed; left:0; right:0; bottom:0;
+    background:var(--ink);
+    color:#fff;
+    padding:12px 16px;
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+    z-index:40;
+    box-shadow:0 -4px 14px rgba(0,0,0,0.25);
+  }
+  .cart-bar.show{ display:flex; }
+  .cart-bar .info{ font-size:0.85rem; color:#DAD6C6; }
+  .cart-bar .amt{ font-weight:800; font-size:1.05rem; color:#fff; }
+  .cart-bar button{
+    background:var(--marigold);
+    color:var(--ink);
+    border:none;
+    padding:10px 18px;
+    border-radius:9px;
+    font-weight:800;
+    font-size:0.88rem;
+    cursor:pointer;
+  }
+
+  /* ---------- Modals ---------- */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(20,17,10,0.55);
+    display:none;
+    align-items:flex-end;
+    justify-content:center;
+    z-index:60;
+  }
+  .overlay.show{ display:flex; }
+  .sheet{
+    background:var(--paper);
+    width:100%;
+    max-width:640px;
+    max-height:88vh;
+    overflow-y:auto;
+    border-radius:18px 18px 0 0;
+    padding:18px 18px 26px;
+    animation:slideup .18s ease;
+  }
+  @keyframes slideup{ from{ transform:translateY(24px); opacity:0;} to{ transform:translateY(0); opacity:1;} }
+  .sheet h2{
+    font-family:'Baloo 2',cursive;
+    color:var(--green-dark);
+    margin:2px 0 14px;
+    font-size:1.3rem;
+  }
+  .sheet .close-x{
+    position:absolute; top:14px; right:18px;
+    background:none; border:none; font-size:1.4rem; color:var(--ink-soft); cursor:pointer;
+  }
+  .sheet-inner{ position:relative; }
+
+  .cart-line{
+    display:flex; justify-content:space-between; align-items:center;
+    background:#fff; border:1px solid var(--paper-line); border-radius:10px;
+    padding:10px 12px; margin-bottom:8px;
+  }
+  .cart-line .l-name{ font-weight:700; font-size:0.9rem; }
+  .cart-line .l-sub{ font-size:0.76rem; color:var(--ink-soft); margin-top:2px; }
+  .cart-line .l-right{ text-align:right; }
+  .cart-line .l-price{ font-weight:700; color:var(--green-dark); }
+  .cart-line .l-remove{
+    background:none; border:none; color:var(--brick); font-size:0.76rem;
+    cursor:pointer; margin-top:4px; font-weight:600;
+  }
+  .cart-total-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 2px 4px; border-top:2px dashed var(--paper-line); margin-top:10px;
+    font-family:'Baloo 2',cursive; font-size:1.15rem; color:var(--green-dark); font-weight:700;
+  }
+
+  .form-group{ margin-bottom:14px; }
+  .form-group label{ display:block; font-size:0.82rem; font-weight:700; margin-bottom:5px; color:var(--ink);}
+  .form-group input, .form-group select, .form-group textarea{
+    width:100%; padding:11px 12px; border-radius:9px; border:1px solid var(--paper-line);
+    font-family:inherit; font-size:0.92rem; background:#fff;
+  }
+  .form-group textarea{ resize:vertical; min-height:60px; }
+  .form-hint{ font-size:0.72rem; color:var(--ink-soft); margin-top:4px; }
+  .pay-note{
+    background:#FFF6E4; border:1px solid #F0DBA1; padding:9px 11px; border-radius:9px;
+    font-size:0.78rem; color:#7A5A0B; margin-top:6px; display:none;
+  }
+  .pay-note.show{ display:block; }
+
+  .primary-btn{
+    width:100%; background:var(--green); color:#fff; border:none; padding:14px;
+    border-radius:11px; font-weight:800; font-size:0.98rem; cursor:pointer; margin-top:6px;
+  }
+  .primary-btn:disabled{ background:#B7C9BE; cursor:not-allowed; }
+  .secondary-btn{
+    width:100%; background:none; color:var(--green-dark); border:1.5px solid var(--green); padding:12px;
+    border-radius:11px; font-weight:700; font-size:0.9rem; cursor:pointer; margin-top:10px;
+  }
+  .error-box{
+    background:#FCE9E5; color:var(--brick); border:1px solid #F1BEB2; padding:9px 11px;
+    border-radius:9px; font-size:0.82rem; margin-bottom:12px; display:none;
+  }
+  .error-box.show{ display:block; }
+
+  /* ---------- Confirmation ---------- */
+  .confirm-wrap{ text-align:center; padding:6px 4px 10px; }
+  .confirm-wrap .tick{
+    width:56px; height:56px; border-radius:50%; background:var(--green);
+    color:#fff; display:flex; align-items:center; justify-content:center;
+    font-size:1.7rem; margin:4px auto 14px;
+  }
+  .order-chit{
+    background:#fff; border:2px dashed var(--paper-line); border-radius:12px;
+    padding:18px; margin:14px 0; position:relative;
+  }
+  .order-chit .stamp{
+    display:inline-block;
+    border:3px solid var(--brick); color:var(--brick);
+    font-family:'Baloo 2',cursive; font-weight:800; font-size:1.3rem;
+    padding:6px 16px; border-radius:8px; transform:rotate(-3deg);
+    letter-spacing:1px; margin-bottom:10px;
+  }
+  .order-chit .oline{ display:flex; justify-content:space-between; font-size:0.85rem; padding:4px 0; color:var(--ink-soft);}
+  .order-chit .oline b{ color:var(--ink); }
+  #qrcode-box{ display:flex; justify-content:center; margin:14px 0 4px; }
+  .footer-note{ font-size:0.76rem; color:var(--ink-soft); margin-top:10px; line-height:1.5; }
+
+  #app-loading{ text-align:center; padding:50px 20px; color:var(--ink-soft); font-size:0.9rem; }
+</style>
+</head>
+<body>
+
+<header class="shop">
+  <p class="name">PINGALE PROVISIONS</p>
+  <p class="tagline">Order online · Pick up in store</p>
+  <div class="meta">
+    <div>📍 Near Old Police Station, Ganpati Galli, Kasoda, Maharashtra – 425110</div>
+    <div>📞 Call: <a href="tel:9011402307">9011402307</a> &nbsp;|&nbsp; 💬 WhatsApp: <a href="https://wa.me/919834456597" target="_blank">9834456597</a></div>
+  </div>
+  <span class="hours-pill">Open daily · 8:00 AM – 9:00 PM</span>
+</header>
+
+<main>
+  <div id="app-loading">Loading today's stock…</div>
+  <div id="catalog"></div>
+</main>
+
+<!-- Sticky cart bar -->
+<div class="cart-bar" id="cartBar">
+  <div class="info">
+    <span id="cartCount">0</span> item(s)<br>
+    <span class="amt">₹<span id="cartTotalMini">0</span></span>
+  </div>
+  <button onclick="openCart()">View Cart</button>
+</div>
+
+<!-- Cart sheet -->
+<div class="overlay" id="cartOverlay">
+  <div class="sheet">
+    <div class="sheet-inner">
+      <button class="close-x" onclick="closeOverlay('cartOverlay')">✕</button>
+      <h2>Your Cart</h2>
+      <div id="cartLines"></div>
+      <div id="cartEmptyMsg" class="empty-msg" style="display:none;">Your cart is empty. Add items to get started.</div>
+      <div class="cart-total-row" id="cartTotalRow" style="display:none;">
+        <span>Total</span><span>₹<span id="cartTotalFull">0</span></span>
+      </div>
+      <button class="primary-btn" id="toCheckoutBtn" onclick="openCheckout()">Proceed to Checkout</button>
+    </div>
+  </div>
+</div>
+
+<!-- Checkout sheet -->
+<div class="overlay" id="checkoutOverlay">
+  <div class="sheet">
+    <div class="sheet-inner">
+      <button class="close-x" onclick="closeOverlay('checkoutOverlay')">✕</button>
+      <h2>Checkout</h2>
+      <div class="error-box" id="checkoutError"></div>
+
+      <div class="form-group">
+        <label for="custName">Your Name</label>
+        <input type="text" id="custName" placeholder="e.g. Ramesh Pingale" />
+      </div>
+      <div class="form-group">
+        <label for="custPhone">Mobile Number</label>
+        <input type="tel" id="custPhone" maxlength="10" placeholder="10-digit mobile number" />
+      </div>
+      <div class="form-group">
+        <label for="pickupSlot">Pickup Time (8:00 AM – 9:00 PM)</label>
+        <input type="time" id="pickupSlot" min="08:00" max="21:00" />
+        <div class="form-hint">Everything is ready stock — no waiting, we pack it fresh when you arrive.</div>
+      </div>
+      <div class="form-group">
+        <label for="paymentMethod">Payment Method</label>
+        <select id="paymentMethod" onchange="onPaymentChange()">
+          <option value="Cash at Pickup">Cash at Pickup</option>
+          <option value="UPI at Pickup">UPI at Pickup</option>
+          <option value="Advance UPI">Advance UPI (pay now)</option>
+        </select>
+        <div class="pay-note" id="advanceUpiNote">
+          To pay in advance, send the amount via GPay / PhonePe / any UPI app to
+          <b>9834456597</b>, then show the payment screenshot at pickup. Please confirm the exact UPI ID with the shop on WhatsApp before paying.
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="orderNote">Note for the shop (optional)</label>
+        <textarea id="orderNote" placeholder="e.g. Slightly less spicy dal packing / call before pickup"></textarea>
+      </div>
+
+      <button class="primary-btn" id="placeOrderBtn" onclick="placeOrder()">Place Order</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation sheet -->
+<div class="overlay" id="confirmOverlay">
+  <div class="sheet">
+    <div class="sheet-inner confirm-wrap">
+      <div class="tick">✓</div>
+      <h2>Order Placed!</h2>
+      <div class="order-chit">
+        <div class="stamp" id="confirmOrderNumber">PP-000000</div>
+        <div class="oline"><span>Customer</span><b id="confirmName"></b></div>
+        <div class="oline"><span>Phone</span><b id="confirmPhone"></b></div>
+        <div class="oline"><span>Pickup</span><b id="confirmSlot"></b></div>
+        <div class="oline"><span>Payment</span><b id="confirmPayment"></b></div>
+        <div class="oline"><span>Total</span><b id="confirmTotal"></b></div>
+      </div>
+      <div id="qrcode-box"></div>
+      <p class="footer-note">Show this order number (or the QR code) at the counter when you arrive at<br><b>Pingale Provisions, Ganpati Galli, Kasoda</b>.</p>
+      <button class="secondary-btn" onclick="startNewOrder()">Place Another Order</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ================= SUPABASE CLIENT =================
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ================= STATE =================
+  let PRODUCTS = [];
+  let CART = JSON.parse(localStorage.getItem('pp_cart') || '[]');
+
+  const WEIGHT_OPTIONS = [
+    { label: '250 g', kg: 0.25 },
+    { label: '500 g', kg: 0.5 },
+    { label: '750 g', kg: 0.75 },
+    { label: '1 kg',  kg: 1 },
+    { label: '2 kg',  kg: 2 },
+    { label: '3 kg',  kg: 3 },
+    { label: '5 kg',  kg: 5 },
+  ];
+
+  function saveCart(){
+    localStorage.setItem('pp_cart', JSON.stringify(CART));
+    renderCartBar();
+  }
+
+  function rupees(n){
+    return Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  // ================= LOAD PRODUCTS (LIVE FROM SUPABASE) =================
+  async function loadProducts(){
+    const loadingEl = document.getElementById('app-loading');
+    const { data, error } = await sb
+      .from('products')
+      .select('*')
+      .eq('active', true)
+      .order('category', { ascending: true })
+      .order('name', { ascending: true });
+
+    loadingEl.style.display = 'none';
+
+    if (error) {
+      document.getElementById('catalog').innerHTML =
+        `<div class="empty-msg">Could not load products right now.<br>${error.message}</div>`;
+      return;
+    }
+
+    PRODUCTS = data || [];
+    renderCatalog();
+    renderCartBar();
+  }
+
+  function renderCatalog(){
+    const root = document.getElementById('catalog');
+    if (!PRODUCTS.length){
+      root.innerHTML = `<div class="empty-msg">No products available right now. Please check back soon.</div>`;
+      return;
+    }
+
+    const byCategory = {};
+    PRODUCTS.forEach(p => {
+      const c = p.category || 'General';
+      if (!byCategory[c]) byCategory[c] = [];
+      byCategory[c].push(p);
+    });
+
+    let html = '';
+    Object.keys(byCategory).forEach(cat => {
+      html += `<div class="category-title">${escapeHtml(cat)}</div><div class="grid">`;
+      byCategory[cat].forEach(p => { html += productCardHtml(p); });
+      html += `</div>`;
+    });
+    root.innerHTML = html;
+  }
+
+  function productCardHtml(p){
+    const mrpHtml = (p.mrp && p.mrp > p.price)
+      ? `<span class="mrp">₹${rupees(p.mrp)}</span>` : '';
+
+    if (p.pricing_type === 'By-Weight'){
+      const options = WEIGHT_OPTIONS.map(o =>
+        `<option value="${o.kg}">${o.label} — ₹${rupees(p.price * o.kg)}</option>`
+      ).join('');
+      return `
+        <div class="card">
+          <div class="pcat">${escapeHtml(p.category||'')}</div>
+          <div class="pname">${escapeHtml(p.name)}</div>
+          <div class="price-row"><span class="price">₹${rupees(p.price)}</span><span class="unit-note">/ ${escapeHtml(p.unit)}</span> ${mrpHtml}</div>
+          <select class="weight-select" id="weight-${p.id}">${options}</select>
+          <button class="add-btn" onclick="addByWeight('${p.id}', this)">Add to Cart</button>
+        </div>`;
+    } else {
+      return `
+        <div class="card">
+          <div class="pcat">${escapeHtml(p.category||'')}</div>
+          <div class="pname">${escapeHtml(p.name)}</div>
+          <div class="price-row"><span class="price">₹${rupees(p.price)}</span><span class="unit-note">/ ${escapeHtml(p.unit)}</span> ${mrpHtml}</div>
+          <div class="qty-row">
+            <div class="stepper">
+              <button onclick="stepQty('${p.id}', -1)">−</button>
+              <input type="text" id="qty-${p.id}" value="1" readonly />
+              <button onclick="stepQty('${p.id}', 1)">+</button>
+            </div>
+          </div>
+          <button class="add-btn" onclick="addFixed('${p.id}', this)">Add to Cart</button>
+        </div>`;
+    }
+  }
+
+  function stepQty(pid, delta){
+    const input = document.getElementById(`qty-${pid}`);
+    let v = parseInt(input.value || '1', 10) + delta;
+    if (v < 1) v = 1;
+    if (v > 99) v = 99;
+    input.value = v;
+  }
+
+  function flashAdded(btn){
+    btn.classList.add('added');
+    const original = btn.textContent;
+    btn.textContent = 'Added ✓';
+    setTimeout(() => { btn.classList.remove('added'); btn.textContent = original; }, 900);
+  }
+
+  function addByWeight(pid, btn){
+    const p = PRODUCTS.find(x => x.id === pid);
+    if (!p) return;
+    const select = document.getElementById(`weight-${pid}`);
+    const kg = parseFloat(select.value);
+    const label = select.options[select.selectedIndex].text.split(' — ')[0];
+    const lineTotal = round2(p.price * kg);
+
+    CART.push({
+      cartId: crypto.randomUUID(),
+      product_id: p.id,
+      product_name: p.name,
+      pricing_type: 'By-Weight',
+      qty_value: kg,
+      unit_label: label,
+      unit_price: p.price,
+      line_total: lineTotal
+    });
+    saveCart();
+    flashAdded(btn);
+  }
+
+  function addFixed(pid, btn){
+    const p = PRODUCTS.find(x => x.id === pid);
+    if (!p) return;
+    const qtyInput = document.getElementById(`qty-${pid}`);
+    const qty = parseInt(qtyInput.value || '1', 10);
+    const lineTotal = round2(p.price * qty);
+
+    CART.push({
+      cartId: crypto.randomUUID(),
+      product_id: p.id,
+      product_name: p.name,
+      pricing_type: 'Fixed',
+      qty_value: qty,
+      unit_label: `${qty} ${p.unit}${qty > 1 ? 's' : ''}`,
+      unit_price: p.price,
+      line_total: lineTotal
+    });
+    saveCart();
+    qtyInput.value = 1;
+    flashAdded(btn);
+  }
+
+  function round2(n){ return Math.round(n * 100) / 100; }
+
+  function cartTotal(){
+    return round2(CART.reduce((sum, l) => sum + l.line_total, 0));
+  }
+
+  function renderCartBar(){
+    const bar = document.getElementById('cartBar');
+    document.getElementById('cartCount').textContent = CART.length;
+    document.getElementById('cartTotalMini').textContent = rupees(cartTotal());
+    bar.classList.toggle('show', CART.length > 0);
+  }
+
+  function renderCartLines(){
+    const wrap = document.getElementById('cartLines');
+    const emptyMsg = document.getElementById('cartEmptyMsg');
+    const totalRow = document.getElementById('cartTotalRow');
+    const checkoutBtn = document.getElementById('toCheckoutBtn');
+
+    if (!CART.length){
+      wrap.innerHTML = '';
+      emptyMsg.style.display = 'block';
+      totalRow.style.display = 'none';
+      checkoutBtn.disabled = true;
+      return;
+    }
+    emptyMsg.style.display = 'none';
+    totalRow.style.display = 'flex';
+    checkoutBtn.disabled = false;
+
+    wrap.innerHTML = CART.map(line => `
+      <div class="cart-line">
+        <div>
+          <div class="l-name">${escapeHtml(line.product_name)}</div>
+          <div class="l-sub">${escapeHtml(line.unit_label)} × ₹${rupees(line.unit_price)}</div>
+        </div>
+        <div class="l-right">
+          <div class="l-price">₹${rupees(line.line_total)}</div>
+          <button class="l-remove" onclick="removeLine('${line.cartId}')">Remove</button>
+        </div>
+      </div>
+    `).join('');
+
+    document.getElementById('cartTotalFull').textContent = rupees(cartTotal());
+  }
+
+  function removeLine(cartId){
+    CART = CART.filter(l => l.cartId !== cartId);
+    saveCart();
+    renderCartLines();
+  }
+
+  // ================= OVERLAYS =================
+  function openCart(){
+    renderCartLines();
+    document.getElementById('cartOverlay').classList.add('show');
+  }
+  function closeOverlay(id){ document.getElementById(id).classList.remove('show'); }
+  function openCheckout(){
+    if (!CART.length) return;
+    closeOverlay('cartOverlay');
+    document.getElementById('checkoutOverlay').classList.add('show');
+  }
+  function onPaymentChange(){
+    const val = document.getElementById('paymentMethod').value;
+    document.getElementById('advanceUpiNote').classList.toggle('show', val === 'Advance UPI');
+  }
+
+  // ================= CHECKOUT / ORDER PLACEMENT =================
+  function showCheckoutError(msg){
+    const box = document.getElementById('checkoutError');
+    box.textContent = msg;
+    box.classList.add('show');
+  }
+  function clearCheckoutError(){
+    document.getElementById('checkoutError').classList.remove('show');
+  }
+
+  function generateOrderNumber(){
+    const d = new Date();
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yy = String(d.getFullYear()).slice(-2);
+    const rand = Math.floor(1000 + Math.random()*9000);
+    return `PP-${dd}${mm}${yy}-${rand}`;
+  }
+
+  function isValidPickupTime(hhmm){
+    if (!/^\d{2}:\d{2}$/.test(hhmm)) return false;
+    const [h,m] = hhmm.split(':').map(Number);
+    const mins = h*60+m;
+    return mins >= (8*60) && mins <= (21*60);
+  }
+
+  function formatSlotForDisplay(hhmm){
+    const [h,m] = hhmm.split(':').map(Number);
+    const period = h >= 12 ? 'PM' : 'AM';
+    let h12 = h % 12; if (h12 === 0) h12 = 12;
+    return `${h12}:${String(m).padStart(2,'0')} ${period}`;
+  }
+
+  let lastOrderPayload = null; // kept only in memory for the confirmation screen
+
+  async function placeOrder(){
+    clearCheckoutError();
+    const name = document.getElementById('custName').value.trim();
+    const phone = document.getElementById('custPhone').value.trim();
+    const slot = document.getElementById('pickupSlot').value;
+    const payment = document.getElementById('paymentMethod').value;
+    const note = document.getElementById('orderNote').value.trim();
+
+    if (!name) return showCheckoutError('Please enter your name.');
+    if (!/^\d{10}$/.test(phone)) return showCheckoutError('Please enter a valid 10-digit mobile number.');
+    if (!slot || !isValidPickupTime(slot)) return showCheckoutError('Please choose a pickup time between 8:00 AM and 9:00 PM.');
+    if (!CART.length) return showCheckoutError('Your cart is empty.');
+
+    const btn = document.getElementById('placeOrderBtn');
+    btn.disabled = true;
+    btn.textContent = 'Placing order…';
+
+    const orderId = crypto.randomUUID();
+    const orderNumber = generateOrderNumber();
+    const total = cartTotal();
+
+    const orderRow = {
+      id: orderId,
+      order_number: orderNumber,
+      customer_name: name,
+      customer_phone: phone,
+      pickup_slot: slot,
+      payment_method: payment,
+      status: 'new',
+      total: total,
+      note: note || null
+    };
+
+    const { error: orderErr } = await sb.from('orders').insert(orderRow);
+    if (orderErr){
+      btn.disabled = false;
+      btn.textContent = 'Place Order';
+      return showCheckoutError('Could not place order: ' + orderErr.message);
+    }
+
+    const itemRows = CART.map(line => ({
+      id: crypto.randomUUID(),
+      order_id: orderId,
+      product_id: line.product_id,
+      product_name: line.product_name,
+      quantity: line.qty_value,
+      price_at_order: line.unit_price,
+      unit_label: line.unit_label
+    }));
+
+    const { error: itemsErr } = await sb.from('order_items').insert(itemRows);
+    if (itemsErr){
+      btn.disabled = false;
+      btn.textContent = 'Place Order';
+      return showCheckoutError('Order created but items failed to save: ' + itemsErr.message + '. Please contact the shop with your order number ' + orderNumber + '.');
+    }
+
+    lastOrderPayload = { orderNumber, name, phone, slot, payment, total };
+
+    btn.disabled = false;
+    btn.textContent = 'Place Order';
+
+    // Reset cart & form
+    CART = [];
+    saveCart();
+    document.getElementById('custName').value = '';
+    document.getElementById('custPhone').value = '';
+    document.getElementById('pickupSlot').value = '';
+    document.getElementById('orderNote').value = '';
+    document.getElementById('paymentMethod').value = 'Cash at Pickup';
+    onPaymentChange();
+
+    closeOverlay('checkoutOverlay');
+    showConfirmation(lastOrderPayload);
+  }
+
+  function showConfirmation(o){
+    document.getElementById('confirmOrderNumber').textContent = o.orderNumber;
+    document.getElementById('confirmName').textContent = o.name;
+    document.getElementById('confirmPhone').textContent = o.phone;
+    document.getElementById('confirmSlot').textContent = formatSlotForDisplay(o.slot);
+    document.getElementById('confirmPayment').textContent = o.payment;
+    document.getElementById('confirmTotal').textContent = '₹' + rupees(o.total);
+
+    const qrBox = document.getElementById('qrcode-box');
+    qrBox.innerHTML = '';
+    const qrData = `Pingale Provisions Order\nOrder No: ${o.orderNumber}\nName: ${o.name}\nPhone: ${o.phone}\nPickup: ${formatSlotForDisplay(o.slot)}\nPayment: ${o.payment}\nTotal: Rs.${rupees(o.total)}`;
+    new QRCode(qrBox, { text: qrData, width: 168, height: 168, colorDark: '#1F4B3A', colorLight: '#ffffff' });
+
+    document.getElementById('confirmOverlay').classList.add('show');
+  }
+
+  function startNewOrder(){
+    closeOverlay('confirmOverlay');
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, s => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    }[s]));
+  }
+
+  // ================= INIT =================
+  onPaymentChange();
+  loadProducts();
+</script>
+</body>
+</html>
