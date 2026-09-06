@@ -3,7 +3,19 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Pingale Provisions — Order for Pickup or Delivery</title>
+<meta name="description" content="Order fresh groceries from Pingale Provisions in Kasoda for pickup or local delivery." />
+<meta name="keywords" content="Pingale Provisions, grocery store Kasoda, groceries delivery Kasoda, grocery pickup" />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://pingaleprovisions.com/" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Pingale Provisions — Fresh Groceries in Kasoda" />
+<meta property="og:description" content="Order fresh groceries online for pickup or local delivery." />
+<meta property="og:url" content="https://pingaleprovisions.com/" />
+<meta property="og:site_name" content="Pingale Provisions" />
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"GroceryStore","name":"Pingale Provisions","url":"https://pingaleprovisions.com/","telephone":"+919834456597","address":{"@type":"PostalAddress","streetAddress":"Ganpati Galli","addressLocality":"Kasoda","addressCountry":"IN"},"openingHours":"Mo-Su 08:00-21:00"}
+</script>
+<title>Pingale Provisions — Fresh Groceries in Kasoda</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%232F6E4F'/%3E%3Ctext x='32' y='44' font-size='36' font-family='Georgia, serif' font-weight='700' fill='%23E8A33D' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E" />
 
 <!-- ======================================================================
@@ -263,6 +275,7 @@
     .card:hover{ box-shadow:0 4px 16px rgba(33,29,20,0.14); transform:translateY(-1px); }
   }
   .card .pname{ font-weight:700; font-size:0.94rem; line-height:1.2; }
+  .card .product-image{ width:100%; aspect-ratio:1.35; object-fit:cover; border-radius:8px; background:#FAF8F1; }
   .card .pcat{ font-size:0.7rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.4px;}
   .card .price-row{ display:flex; align-items:baseline; gap:6px; margin-top:2px;}
   .card .price{ font-weight:700; color:var(--green-dark); font-size:1.02rem;}
@@ -495,6 +508,7 @@
     font-size:0.78rem; color:#7A5A0B; margin-top:6px; display:none;
   }
   .pay-note.show{ display:block; }
+  .pay-qr{ display:block; width:170px; max-width:100%; margin:10px auto 4px; border-radius:8px; background:#fff; }
 
   .primary-btn{
     width:100%; background:var(--green); color:#fff; border:none; padding:14px;
@@ -730,8 +744,9 @@
           <option value="Advance UPI">Advance UPI (pay now)</option>
         </select>
         <div class="pay-note" id="advanceUpiNote">
-          To pay in advance, send the amount via GPay / PhonePe / any UPI app to
-          <b>9834456597</b>, then show the payment screenshot at pickup. Please confirm the exact UPI ID with the shop on WhatsApp before paying.
+          Scan this QR with GPay, PhonePe or any UPI app, then show the payment screenshot at pickup.
+          <img class="pay-qr" id="paymentQrImage" alt="Pingale Provisions advance payment QR code" style="display:none;" />
+          <span id="paymentQrFallback">UPI number: <b>9834456597</b></span>
         </div>
       </div>
       <div class="form-group">
@@ -811,6 +826,7 @@
 <script>
   // ================= SUPABASE CLIENT =================
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const STORE_QR_KEY = 'advance_payment_qr';
 
   // ================= STATE =================
   let PRODUCTS = [];
@@ -882,6 +898,7 @@
     }
 
     PRODUCTS = data || [];
+    loadPaymentQr();
     renderCatNav();
     renderCatalog();
     renderCartBar();
@@ -964,6 +981,7 @@
       return `
         <div class="card">
           ${badgeHtml}
+          ${p.image_url ? `<img class="product-image" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy">` : ''}
           <div class="pcat">${escapeHtml(p.category||'')}</div>
           <div class="pname">${escapeHtml(p.name)}</div>
           <div class="price-row"><span class="price">₹${rupees(p.price)}</span><span class="unit-note">/ ${escapeHtml(p.unit)}</span> ${mrpHtml}</div>
@@ -974,6 +992,7 @@
       return `
         <div class="card">
           ${badgeHtml}
+          ${p.image_url ? `<img class="product-image" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy">` : ''}
           <div class="pcat">${escapeHtml(p.category||'')}</div>
           <div class="pname">${escapeHtml(p.name)}</div>
           <div class="price-row"><span class="price">₹${rupees(p.price)}</span><span class="unit-note">/ ${escapeHtml(p.unit)}</span> ${mrpHtml}</div>
@@ -1129,6 +1148,15 @@
   function onPaymentChange(){
     const val = document.getElementById('paymentMethod').value;
     document.getElementById('advanceUpiNote').classList.toggle('show', val === 'Advance UPI');
+  }
+
+  async function loadPaymentQr(){
+    const { data } = await sb.from('store_settings').select('value').eq('key', STORE_QR_KEY).maybeSingle();
+    if (!data || !data.value) return;
+    const image = document.getElementById('paymentQrImage');
+    image.src = data.value;
+    image.style.display = 'block';
+    document.getElementById('paymentQrFallback').style.display = 'none';
   }
 
   // ================= PICKUP vs DELIVERY =================

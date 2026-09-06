@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
 <title>Pingale Provisions — Owner Dashboard</title>
 
 <!-- ======================================================================
@@ -143,6 +144,17 @@
     background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:14px;
     display:grid; grid-template-columns:1.4fr 1fr 0.8fr 0.8fr 0.8fr 1fr auto; gap:8px; align-items:end; margin-bottom:18px;
   }
+  .inventory-tools{
+    background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:14px;
+    margin-bottom:18px;
+  }
+  .inventory-tools h3{ color:var(--green-dark); font-size:1rem; margin-bottom:4px; }
+  .inventory-tools p{ color:var(--ink-soft); font-size:0.78rem; margin:0 0 10px; }
+  .qr-settings{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .qr-settings img{ width:90px; height:90px; object-fit:contain; border:1px solid var(--line); border-radius:8px; }
+  .image-preview{ width:48px; height:42px; object-fit:cover; border-radius:6px; background:#FAF8F1; vertical-align:middle; }
+  .image-input{ max-width:150px; font-size:0.72rem; }
+  @media(max-width:900px){ .add-product-bar{ grid-template-columns:1fr 1fr; } }
   .add-product-bar label{ font-size:0.7rem; font-weight:700; color:var(--ink-soft); display:block; margin-bottom:4px;}
   .add-product-bar input, .add-product-bar select{
     width:100%; padding:8px 9px; border:1px solid var(--line); border-radius:7px; font-size:0.82rem;
@@ -242,7 +254,18 @@
         <span class="pill-count" id="productsCount">0 products</span>
       </div>
 
+      <div class="inventory-tools">
+        <h3>Advance payment QR</h3>
+        <p>Upload your personal UPI QR once. Customers will see it automatically when they choose Advance UPI.</p>
+        <div class="qr-settings">
+          <img id="qrPreview" alt="Current payment QR" style="display:none;">
+          <input type="file" id="qrFile" accept="image/png,image/jpeg,image/webp">
+          <button class="btn-mini btn-save" onclick="savePaymentQr()">Upload QR</button>
+        </div>
+      </div>
+
       <div class="add-product-bar">
+        <div style="grid-column:1/-1;color:var(--green-dark);font-weight:800;font-size:0.9rem;">Add a product</div>
         <div>
           <label>Name</label>
           <input type="text" id="newName" placeholder="e.g. Toor Dal" />
@@ -270,13 +293,17 @@
             <option value="Fixed">Fixed</option>
           </select>
         </div>
+        <div>
+          <label>Product Image</label>
+          <input type="file" id="newImage" accept="image/png,image/jpeg,image/webp" />
+        </div>
         <button onclick="addProduct()">+ Add Product</button>
       </div>
 
       <table>
         <thead>
           <tr>
-            <th>Name</th><th>Category</th><th>Price</th><th>MRP</th><th>Unit</th><th>Type</th><th>Status</th><th>Actions</th>
+            <th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>MRP</th><th>Unit</th><th>Type</th><th>Status</th><th>Actions</th>
           </tr>
         </thead>
         <tbody id="productsTableBody"></tbody>
@@ -365,6 +392,7 @@
     document.getElementById('appShell').classList.add('show');
     loadOrders();
     loadProducts();
+    loadPaymentQr();
     loadCustomers();
     loadReviews();
     subscribeRealtime();
@@ -519,6 +547,44 @@
 
   // ================= INVENTORY =================
   let PRODUCTS = [];
+  const STORE_QR_KEY = 'advance_payment_qr';
+
+  async function uploadAsset(file, folder){
+    if (!file) return null;
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)){
+      throw new Error('Please choose a PNG, JPG or WebP image.');
+    }
+    if (file.size > 5 * 1024 * 1024) throw new Error('Images must be smaller than 5 MB.');
+    const path = `${folder}/${crypto.randomUUID()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, '-')}`;
+    const { error } = await sb.storage.from('site-assets').upload(path, file, { upsert: true, contentType: file.type });
+    if (error) throw error;
+    return sb.storage.from('site-assets').getPublicUrl(path).data.publicUrl;
+  }
+
+  async function loadPaymentQr(){
+    const { data, error } = await sb.from('store_settings').select('value').eq('key', STORE_QR_KEY).maybeSingle();
+    if (error){ console.error(error); return; }
+    if (data && data.value){
+      const preview = document.getElementById('qrPreview');
+      preview.src = data.value;
+      preview.style.display = 'block';
+    }
+  }
+
+  async function savePaymentQr(){
+    const file = document.getElementById('qrFile').files[0];
+    if (!file){ alert('Please choose your QR image first.'); return; }
+    try {
+      const url = await uploadAsset(file, 'payment');
+      const { error } = await sb.from('store_settings').upsert({ key: STORE_QR_KEY, value: url, updated_at: new Date().toISOString() });
+      if (error) throw error;
+      document.getElementById('qrPreview').src = url;
+      document.getElementById('qrPreview').style.display = 'block';
+      showToast('Payment QR saved — customers can now see it');
+    } catch (error) {
+      alert('Could not save QR: ' + error.message);
+    }
+  }
 
   async function loadProducts(){
     const { data, error } = await sb.from('products').select('*').order('category').order('name');
@@ -536,6 +602,10 @@
   function productRowHtml(p){
     return `
       <tr data-id="${p.id}">
+        <td>
+          ${p.image_url ? `<img class="image-preview" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}">` : '<span style="color:var(--ink-soft);">No image</span>'}
+          <input class="image-input" type="file" accept="image/png,image/jpeg,image/webp" data-field="image_file">
+        </td>
         <td><input type="text" value="${escapeHtml(p.name)}" data-field="name" /></td>
         <td><input type="text" value="${escapeHtml(p.category)}" data-field="category" /></td>
         <td class="num-cell"><input type="number" step="0.01" value="${p.price}" data-field="price" /></td>
@@ -580,14 +650,27 @@
       return;
     }
 
+    let image_url = PRODUCTS.find(p => p.id === id)?.image_url || null;
+    const imageFile = get('image_file').files[0];
+    try {
+      if (imageFile) image_url = await uploadAsset(imageFile, 'products');
+    } catch (error) {
+      alert('Could not upload product image: ' + error.message);
+      return;
+    }
     const { error } = await sb.from('products')
-      .update({ name, category, price, mrp, unit, pricing_type, active })
+      .update({ name, category, price, mrp, unit, pricing_type, active, image_url })
       .eq('id', id);
 
     if (error){ alert('Could not save: ' + error.message); return; }
 
     const idx = PRODUCTS.findIndex(p => p.id === id);
-    if (idx > -1) PRODUCTS[idx] = { ...PRODUCTS[idx], name, category, price, mrp, unit, pricing_type, active };
+    if (idx > -1) PRODUCTS[idx] = { ...PRODUCTS[idx], name, category, price, mrp, unit, pricing_type, active, image_url };
+    if (imageFile){
+      renderProducts();
+      showToast('Product saved — storefront updated');
+      return;
+    }
     row.querySelector('.badge').className = `badge ${active ? 'active' : 'inactive'}`;
     row.querySelector('.badge').textContent = active ? 'Active' : 'Hidden';
     showToast('Product saved — storefront updated');
@@ -610,21 +693,29 @@
     const mrp = mrpRaw === '' ? null : parseFloat(mrpRaw);
     const unit = document.getElementById('newUnit').value.trim() || 'unit';
     const pricing_type = document.getElementById('newPricingType').value;
+    const imageFile = document.getElementById('newImage').files[0];
 
     if (!name || isNaN(price)){
       alert('Please enter at least a product name and price.');
       return;
     }
 
+    let image_url = null;
+    try {
+      if (imageFile) image_url = await uploadAsset(imageFile, 'products');
+    } catch (error) {
+      alert('Could not upload product image: ' + error.message);
+      return;
+    }
     const { data, error } = await sb.from('products')
-      .insert({ name, category, price, mrp, unit, pricing_type, active: true })
+      .insert({ name, category, price, mrp, unit, pricing_type, image_url, active: true })
       .select();
 
     if (error){ alert('Could not add product: ' + error.message); return; }
 
     PRODUCTS.push(data[0]);
     renderProducts();
-    ['newName','newCategory','newPrice','newMrp','newUnit'].forEach(id => document.getElementById(id).value = '');
+    ['newName','newCategory','newPrice','newMrp','newUnit','newImage'].forEach(id => document.getElementById(id).value = '');
     showToast('Product added — now live on storefront');
   }
 

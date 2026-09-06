@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard.html
+Disallow: /delivery.html
+
+Sitemap: https://pingaleprovisions.com/sitemap.xml
