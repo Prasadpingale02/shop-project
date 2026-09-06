@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pingale Provisions — Delivery</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%232F6E4F'/%3E%3Ctext x='32' y='44' font-size='36' font-family='Georgia, serif' font-weight='700' fill='%23E8A33D' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E" />
+
+<!-- ======================================================================
+     SUPABASE CONFIGURATION
+     Same project as index.html / dashboard.html. This page is protected by
+     Supabase Auth (email/password) + Row Level Security, NOT by hiding this
+     key. Never put the "service_role" key here or in any frontend file.
+====================================================================== -->
+<script>
+  const SUPABASE_URL = "https://chbpiocnrrznwjoogthm.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoYnBpb2NucnJ6bndqb29ndGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNjI1MDIsImV4cCI6MjEwMzgzODUwMn0.1F58E21gqaZtcA1vaW3Zq9wF9eUJ9D1gvXbdIGCsvI4";
+
+  // Same shop coordinates as index.html — used only to show "X km from shop"
+  // for context. Update alongside the other two files if you fine-tune them.
+  const SHOP_LAT = 20.823275;
+  const SHOP_LNG = 75.296574;
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --paper:#F6F3EA;
+    --line:#E1DACA;
+    --ink:#211D14;
+    --ink-soft:#6b6450;
+    --green:#2F6E4F;
+    --green-dark:#1F4B3A;
+    --marigold:#F2A93B;
+    --brick:#C1442D;
+    --delivery:#3E6FA8;
+    --radius:12px;
+    --shadow:0 1px 4px rgba(33,29,20,0.08);
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'Inter',sans-serif; font-size:14px;
+  }
+  h1,h2{ font-family:'Baloo 2',cursive; margin:0; }
+  button{ font-family:inherit; cursor:pointer; }
+  input{ font-family:inherit; }
+
+  /* ---------- Login ---------- */
+  #loginScreen{
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(160deg,var(--green-dark), var(--delivery));
+  }
+  .login-card{
+    background:#fff; border-radius:16px; padding:36px 32px; width:340px; max-width:90vw;
+    box-shadow:0 12px 32px rgba(0,0,0,0.25);
+  }
+  .login-card h1{ font-size:1.4rem; color:var(--green-dark); margin-bottom:2px;}
+  .login-card p.sub{ color:var(--ink-soft); font-size:0.82rem; margin:0 0 20px;}
+  .login-card label{ font-size:0.8rem; font-weight:700; display:block; margin-bottom:5px;}
+  .login-card input{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;
+    margin-bottom:14px; font-size:0.9rem;
+  }
+  .login-card button{
+    width:100%; background:var(--delivery); color:#fff; border:none; padding:12px;
+    border-radius:9px; font-weight:700; font-size:0.92rem;
+  }
+  .login-error{ color:var(--brick); font-size:0.8rem; margin-bottom:10px; display:none;}
+  .login-error.show{ display:block; }
+
+  /* ---------- Shell ---------- */
+  #appShell{ display:none; min-height:100vh; flex-direction:column; }
+  #appShell.show{ display:flex; }
+  header.top{
+    background:linear-gradient(180deg,var(--delivery), #2E5581);
+    color:#fff; padding:16px 18px; display:flex; align-items:center; justify-content:space-between;
+  }
+  header.top h1{ font-size:1.15rem; }
+  header.top span.sub{ font-size:0.72rem; color:#D6E4F2; font-weight:600; display:block; }
+  header.top button{
+    background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.4); color:#fff;
+    padding:8px 14px; border-radius:8px; font-weight:700; font-size:0.8rem;
+  }
+
+  main{ flex:1; max-width:640px; margin:0 auto; width:100%; padding:16px 14px 40px; }
+  .section-title{
+    font-weight:800; font-size:0.95rem; color:var(--green-dark);
+    margin:18px 0 10px; display:flex; align-items:center; gap:8px;
+  }
+  .section-title .pill{
+    background:var(--delivery); color:#fff; font-size:0.7rem; font-weight:800;
+    padding:2px 9px; border-radius:999px;
+  }
+  .refresh-hint{ font-size:0.74rem; color:var(--ink-soft); margin-bottom:8px; }
+
+  .delivery-card{
+    background:#fff; border:1px solid var(--line); border-radius:var(--radius);
+    padding:14px; margin-bottom:14px; box-shadow:var(--shadow);
+  }
+  .delivery-card .top-row{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px; }
+  .delivery-card .onum{ font-weight:800; color:var(--green-dark); font-size:0.95rem; }
+  .delivery-card .otime{ font-size:0.72rem; color:var(--ink-soft); }
+  .delivery-card .cname{ font-weight:700; font-size:0.95rem; margin-bottom:2px; }
+  .delivery-card .addr{ font-size:0.86rem; color:var(--ink); margin:6px 0; line-height:1.4; }
+  .delivery-card .dist{ font-size:0.76rem; color:var(--ink-soft); margin-bottom:8px; }
+  .contact-row{ display:flex; gap:8px; margin-bottom:10px; }
+  .contact-row a{
+    flex:1; text-align:center; text-decoration:none; padding:9px; border-radius:8px;
+    font-weight:700; font-size:0.8rem;
+  }
+  .contact-row a.call{ background:#EAF2ED; color:var(--green-dark); }
+  .contact-row a.wa{ background:#E4F5EA; color:#1B7A3D; }
+  .contact-row a.maps{ background:#E9F0F8; color:var(--delivery); }
+  .delivery-card .items-list{ margin:8px 0; padding:8px 10px; background:#FAF8F1; border-radius:8px; }
+  .delivery-card .items-list div{ display:flex; justify-content:space-between; font-size:0.78rem; padding:2px 0; }
+  .delivery-card .note-box{
+    font-size:0.76rem; background:#FFF6E4; border:1px solid #F0DBA1; padding:6px 8px;
+    border-radius:6px; margin-bottom:8px; color:#7A5A0B;
+  }
+  .delivery-card .total-row{ display:flex; justify-content:space-between; font-size:0.82rem; margin:4px 0; color:var(--ink-soft); }
+  .delivery-card .total-row.grand{ font-weight:800; font-size:0.92rem; color:var(--green-dark); border-top:1px dashed var(--line); padding-top:6px; margin-top:6px; }
+  .delivery-card .advance-badge{
+    display:inline-block; background:#FEECEA; color:var(--brick); font-size:0.68rem; font-weight:700;
+    padding:2px 8px; border-radius:999px; margin-left:6px;
+  }
+  .cod-badge{
+    display:inline-block; background:#FFF3DC; color:#8A5B00; font-size:0.68rem; font-weight:800;
+    padding:2px 9px; border-radius:999px; margin-bottom:8px;
+  }
+  .deliver-btn{
+    width:100%; background:var(--green); color:#fff; border:none; padding:12px;
+    border-radius:9px; font-weight:800; font-size:0.9rem;
+  }
+  .deliver-btn:disabled{ opacity:0.6; }
+
+  .delivered-card{
+    background:#fff; border:1px solid var(--line); border-radius:10px;
+    padding:10px 12px; margin-bottom:8px; font-size:0.82rem; color:var(--ink-soft);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .delivered-card b{ color:var(--ink); }
+
+  .empty-state{
+    text-align:center; color:var(--ink-soft); padding:36px 10px; font-size:0.88rem;
+  }
+  .empty-state .big{ font-size:2rem; display:block; margin-bottom:8px; }
+
+  details{ margin-top:8px; }
+  summary{ cursor:pointer; font-weight:700; color:var(--green-dark); font-size:0.85rem; padding:6px 0; }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>Pingale Provisions</h1>
+    <p class="sub">Delivery Login</p>
+    <div class="login-error" id="loginError"></div>
+    <label for="loginEmail">Email</label>
+    <input type="email" id="loginEmail" autocomplete="username" />
+    <label for="loginPassword">Password</label>
+    <input type="password" id="loginPassword" autocomplete="current-password" />
+    <button onclick="doLogin()">Log In</button>
+  </div>
+</div>
+
+<!-- ===================== APP SHELL ===================== -->
+<div id="appShell">
+  <header class="top">
+    <div>
+      <h1>Delivery Queue</h1>
+      <span class="sub">Pingale Provisions</span>
+    </div>
+    <button onclick="doLogout()">Log Out</button>
+  </header>
+
+  <main>
+    <div class="section-title">
+      🛵 Ready to Deliver <span class="pill" id="queueCount">0</span>
+    </div>
+    <div class="refresh-hint">This list updates automatically as new orders are sent out — no need to refresh.</div>
+    <div id="queueList"></div>
+
+    <details>
+      <summary>✅ Delivered Today (<span id="deliveredCount">0</span>)</summary>
+      <div id="deliveredList" style="margin-top:8px;"></div>
+    </details>
+  </main>
+</div>
+
+<script>
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ================= AUTH =================
+  async function checkSession(){
+    const { data: { session } } = await sb.auth.getSession();
+    if (session){
+      showApp();
+    } else {
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('appShell').classList.remove('show');
+    }
+  }
+
+  async function doLogin(){
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errBox = document.getElementById('loginError');
+    errBox.classList.remove('show');
+
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error){
+      errBox.textContent = error.message;
+      errBox.classList.add('show');
+      return;
+    }
+    showApp();
+  }
+
+  async function doLogout(){
+    await sb.auth.signOut();
+    document.getElementById('appShell').classList.remove('show');
+    document.getElementById('loginScreen').style.display = 'flex';
+  }
+
+  function showApp(){
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('appShell').classList.add('show');
+    loadDeliveries();
+    subscribeRealtime();
+  }
+
+  // ================= HELPERS =================
+  function rupees(n){
+    return Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function escapeHtml(str){
+    return String(str ?? '').replace(/[&<>"']/g, s => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    }[s]));
+  }
+  function haversineKm(lat1, lng1, lat2, lng2){
+    const R = 6371;
+    const toRad = d => d * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat/2) ** 2 +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  // ================= DATA =================
+  let QUEUE = [];     // status = out_for_delivery
+  let DELIVERED = [];  // status = delivered, today only
+
+  async function loadDeliveries(){
+    const { data: queueData, error: queueErr } = await sb
+      .from('orders')
+      .select('*, order_items(*)')
+      .eq('status', 'out_for_delivery')
+      .eq('fulfillment_type', 'delivery')
+      .order('created_at', { ascending: true });
+
+    if (queueErr){ console.error(queueErr); }
+    QUEUE = queueData || [];
+
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const { data: deliveredData, error: deliveredErr } = await sb
+      .from('orders')
+      .select('*')
+      .eq('status', 'delivered')
+      .eq('fulfillment_type', 'delivery')
+      .gte('created_at', todayStart.toISOString())
+      .order('created_at', { ascending: false });
+
+    if (deliveredErr){ console.error(deliveredErr); }
+    DELIVERED = deliveredData || [];
+
+    render();
+  }
+
+  function render(){
+    document.getElementById('queueCount').textContent = QUEUE.length;
+    document.getElementById('deliveredCount').textContent = DELIVERED.length;
+
+    const queueList = document.getElementById('queueList');
+    queueList.innerHTML = QUEUE.length
+      ? QUEUE.map(deliveryCardHtml).join('')
+      : `<div class="empty-state"><span class="big">🛵</span>No deliveries waiting right now.<br>New ones will appear here automatically.</div>`;
+
+    const deliveredList = document.getElementById('deliveredList');
+    deliveredList.innerHTML = DELIVERED.length
+      ? DELIVERED.map(o => `
+          <div class="delivered-card">
+            <span><b>${escapeHtml(o.order_number)}</b> — ${escapeHtml(o.customer_name)}</span>
+            <span>₹${rupees(Number(o.total||0) + Number(o.delivery_fee||0))}</span>
+          </div>
+        `).join('')
+      : `<div class="empty-state" style="padding:16px 10px;">Nothing delivered yet today.</div>`;
+  }
+
+  function deliveryCardHtml(o){
+    const time = new Date(o.created_at).toLocaleString('en-IN', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
+    const items = (o.order_items || []).map(it => `
+      <div><span>${escapeHtml(it.product_name)} (${escapeHtml(it.unit_label)})</span><span>₹${rupees(it.quantity * it.price_at_order)}</span></div>
+    `).join('');
+
+    const hasCoords = o.delivery_lat != null && o.delivery_lng != null;
+    const mapUrl = hasCoords ? `https://www.google.com/maps/dir/?api=1&destination=${o.delivery_lat},${o.delivery_lng}` : '';
+    const distFromShop = hasCoords ? haversineKm(SHOP_LAT, SHOP_LNG, o.delivery_lat, o.delivery_lng).toFixed(1) : null;
+
+    const isAdvancePaid = o.payment_method === 'Advance UPI';
+    const codBadge = isAdvancePaid
+      ? '<span class="advance-badge">ALREADY PAID</span>'
+      : `<span class="cod-badge">💰 COLLECT ₹${rupees(Number(o.total||0) + Number(o.delivery_fee||0))} (${escapeHtml(o.payment_method)})</span>`;
+
+    const grandTotal = Number(o.total || 0) + Number(o.delivery_fee || 0);
+    const feeText = o.delivery_fee ? `₹${rupees(o.delivery_fee)}` : (o.delivery_fee === 0 ? 'Free' : 'To confirm');
+
+    return `
+      <div class="delivery-card">
+        <div class="top-row">
+          <span class="onum">${escapeHtml(o.order_number)}</span>
+          <span class="otime">${time}</span>
+        </div>
+        <div class="cname">${escapeHtml(o.customer_name)}</div>
+        <div class="addr">📍 ${escapeHtml(o.delivery_address || 'No address on file')}</div>
+        ${distFromShop ? `<div class="dist">📏 ~${distFromShop} km from shop</div>` : ''}
+        <div class="contact-row">
+          <a class="call" href="tel:${escapeHtml(o.customer_phone)}">📞 Call</a>
+          <a class="wa" href="https://wa.me/91${escapeHtml((o.customer_phone||'').replace(/\\D/g,''))}" target="_blank">💬 WhatsApp</a>
+          ${hasCoords ? `<a class="maps" href="${mapUrl}" target="_blank">🗺️ Directions</a>` : ''}
+        </div>
+        <div class="items-list">${items || '<div>No items recorded</div>'}</div>
+        ${o.note ? `<div class="note-box">📝 ${escapeHtml(o.note)}</div>` : ''}
+        <div class="total-row"><span>Items Total</span><span>₹${rupees(o.total)}</span></div>
+        <div class="total-row"><span>Delivery Fee</span><span>${feeText}</span></div>
+        <div class="total-row grand"><span>Grand Total</span><span>₹${rupees(grandTotal)}</span></div>
+        ${codBadge}
+        <button class="deliver-btn" onclick="markDelivered('${o.id}', this)">✓ Mark as Delivered</button>
+      </div>`;
+  }
+
+  async function markDelivered(orderId, btn){
+    btn.disabled = true;
+    btn.textContent = 'Updating…';
+    const { error } = await sb.from('orders').update({ status: 'delivered' }).eq('id', orderId);
+    if (error){
+      alert('Could not update: ' + error.message);
+      btn.disabled = false;
+      btn.textContent = '✓ Mark as Delivered';
+      return;
+    }
+    QUEUE = QUEUE.filter(o => o.id !== orderId);
+    loadDeliveries(); // refresh both lists so the delivered one appears in history
+  }
+
+  // ================= REALTIME =================
+  function subscribeRealtime(){
+    sb.channel('delivery-realtime')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders' }, (payload) => {
+        // Any status change (packed -> out_for_delivery, or elsewhere) — just
+        // reload the two lists. Simpler and safer than patching in place
+        // since an order can enter or leave this page's scope on any update.
+        if (payload.new.fulfillment_type === 'delivery'){
+          loadDeliveries();
+        }
+      })
+      .subscribe();
+  }
+
+  // ================= INIT =================
+  checkSession();
+</script>
+</body>
+</html>

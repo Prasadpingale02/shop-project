@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Pingale Provisions — Order for Pickup</title>
+<title>Pingale Provisions — Order for Pickup or Delivery</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='32' fill='%232F6E4F'/%3E%3Ctext x='32' y='44' font-size='36' font-family='Georgia, serif' font-weight='700' fill='%23E8A33D' text-anchor='middle'%3EP%3C/text%3E%3C/svg%3E" />
 
 <!-- ======================================================================
      SUPABASE CONFIGURATION
@@ -18,10 +19,27 @@
 <script>
   const SUPABASE_URL = "https://chbpiocnrrznwjoogthm.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNoYnBpb2NucnJ6bndqb29ndGhtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgyNjI1MDIsImV4cCI6MjEwMzgzODUwMn0.1F58E21gqaZtcA1vaW3Zq9wF9eUJ9D1gvXbdIGCsvI4";
+
+  // ======================================================================
+  // SHOP LOCATION — used to calculate delivery distance & fee.
+  // The two numbers below currently point at the Kasoda post office
+  // (looked up by area/PIN code, not your exact shop). For accurate
+  // delivery pricing, replace them with your shop's exact coordinates:
+  //   1. Open Google Maps and find your shop.
+  //   2. Long-press (or right-click) exactly on your shop's location.
+  //   3. Tap the coordinates that pop up (e.g. "20.8231, 75.2967") to
+  //      copy them, then paste the two numbers below.
+  // This same pair of numbers also appears in dashboard.html and
+  // delivery.html — update all three so distances stay consistent.
+  // ======================================================================
+  const SHOP_LAT = 20.823275;
+  const SHOP_LNG = 75.296574;
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -58,7 +76,23 @@
     color:#fff;
     padding:22px 18px 18px;
     border-bottom:6px solid var(--marigold);
+    position:relative;
+    overflow:hidden;
   }
+  .header-icons{
+    display:flex;
+    gap:10px;
+    margin-top:14px;
+  }
+  .header-icons .icon-chip{
+    width:38px; height:38px;
+    background:rgba(255,255,255,0.94);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 2px 6px rgba(0,0,0,0.18);
+    flex:0 0 auto;
+  }
+  .header-icons .icon-chip svg{ width:22px; height:22px; }
   header.shop .name{
     font-family:'Baloo 2',cursive;
     font-weight:800;
@@ -413,6 +447,48 @@
     display:flex; justify-content:space-between; font-weight:800; color:var(--green-dark);
     font-size:0.9rem; margin-top:6px; padding-top:8px; border-top:1px dashed var(--paper-line);
   }
+
+  /* ---------- Fulfillment toggle (pickup / delivery) ---------- */
+  .fulfillment-toggle{ display:flex; gap:8px; }
+  .ft-btn{
+    flex:1;
+    background:#fff;
+    border:1.5px solid var(--paper-line);
+    color:var(--ink);
+    padding:11px 8px;
+    border-radius:10px;
+    font-family:inherit;
+    font-weight:700;
+    font-size:0.9rem;
+    cursor:pointer;
+  }
+  .ft-btn.active{
+    background:var(--green);
+    border-color:var(--green);
+    color:#fff;
+  }
+
+  /* ---------- Delivery map + fee ---------- */
+  #deliveryMap{
+    height:220px;
+    border-radius:11px;
+    border:1px solid var(--paper-line);
+    overflow:hidden;
+    background:#EFE9D4;
+  }
+  .delivery-fee-box{
+    margin-top:10px;
+    background:#FAF8F1;
+    border:1px solid var(--paper-line);
+    border-radius:10px;
+    padding:10px 12px;
+    font-size:0.82rem;
+    color:var(--ink);
+    line-height:1.4;
+  }
+  .delivery-fee-box b{ color:var(--green-dark); }
+  .delivery-fee-box.pending{ color:var(--ink-soft); }
+  .delivery-fee-box.error{ color:var(--brick); }
   .form-hint{ font-size:0.72rem; color:var(--ink-soft); margin-top:4px; }
   .pay-note{
     background:#FFF6E4; border:1px solid #F0DBA1; padding:9px 11px; border-radius:9px;
@@ -503,6 +579,24 @@
     <div>📞 Call: <a href="tel:9011402307">9011402307</a> &nbsp;|&nbsp; 💬 WhatsApp: <a href="https://wa.me/919834456597" target="_blank">9834456597</a></div>
   </div>
   <span class="hours-pill" id="hoursPill">Open daily · 8:00 AM – 9:00 PM</span>
+
+  <div class="header-icons" aria-hidden="true">
+    <span class="icon-chip" title="Fruits">
+      <svg viewBox="0 0 48 48"><path d="M24 14c8 0 13 6 13 14s-6 15-13 15-13-7-13-15 5-14 13-14z" fill="#C1442D"/><path d="M24 14c1-4 4-6 7-6-1 4-3 6-7 6z" fill="#2F6E4F"/></svg>
+    </span>
+    <span class="icon-chip" title="Vegetables">
+      <svg viewBox="0 0 48 48"><path d="M24 44c-2-14 2-22 8-27-3 10-3 20-2 27z" fill="#E8A33D"/><path d="M24 17c2-5 5-8 10-9-1 4-4 8-8 10z" fill="#2F6E4F"/><path d="M24 17c-3-4-4-7-3-11 3 2 5 6 5 11z" fill="#3E8B63"/></svg>
+    </span>
+    <span class="icon-chip" title="Grains">
+      <svg viewBox="0 0 48 48"><path d="M24 6v36" stroke="#E8A33D" stroke-width="2.5" fill="none"/><ellipse cx="19" cy="14" rx="4" ry="6" fill="#E8A33D" transform="rotate(-25 19 14)"/><ellipse cx="29" cy="14" rx="4" ry="6" fill="#E8A33D" transform="rotate(25 29 14)"/><ellipse cx="19" cy="26" rx="4" ry="6" fill="#E8A33D" transform="rotate(-25 19 26)"/><ellipse cx="29" cy="26" rx="4" ry="6" fill="#E8A33D" transform="rotate(25 29 26)"/></svg>
+    </span>
+    <span class="icon-chip" title="Dairy">
+      <svg viewBox="0 0 48 48"><path d="M19 8h10v6l4 6v20a2 2 0 0 1-2 2H17a2 2 0 0 1-2-2V20l4-6z" fill="#F4EFDE" stroke="#211D14" stroke-width="1.5"/><rect x="19" y="6" width="10" height="4" fill="#2F6E4F"/></svg>
+    </span>
+    <span class="icon-chip" title="Groceries">
+      <svg viewBox="0 0 48 48"><path d="M10 20h28l-3 20a3 3 0 0 1-3 2.6H16a3 3 0 0 1-3-2.6z" fill="#C1442D"/><path d="M16 20a8 8 0 0 1 16 0" fill="none" stroke="#5B5540" stroke-width="2.5"/></svg>
+    </span>
+  </div>
 </header>
 
 <div class="trust-strip">
@@ -592,14 +686,42 @@
         <label for="custPhone">Mobile Number</label>
         <input type="tel" id="custPhone" maxlength="10" placeholder="10-digit mobile number" />
       </div>
+
       <div class="form-group">
-        <label for="pickupSlot">Pickup Time</label>
-        <select id="pickupSlot">
-          <option value="">Select a pickup time…</option>
-        </select>
-        <div class="form-hint" id="pickupSlotNote" style="display:none;"></div>
-        <div class="form-hint">Only times within our opening hours are shown — everything is ready stock, so we pack it fresh when you arrive.</div>
+        <label>How would you like your order?</label>
+        <div class="fulfillment-toggle">
+          <button type="button" class="ft-btn active" id="ftPickupBtn" onclick="setFulfillmentType('pickup')">🏬 Pickup</button>
+          <button type="button" class="ft-btn" id="ftDeliveryBtn" onclick="setFulfillmentType('delivery')">🛵 Delivery</button>
+        </div>
       </div>
+
+      <div id="pickupFields">
+        <div class="form-group">
+          <label for="pickupSlot">Pickup Time</label>
+          <select id="pickupSlot">
+            <option value="">Select a pickup time…</option>
+          </select>
+          <div class="form-hint" id="pickupSlotNote" style="display:none;"></div>
+          <div class="form-hint">Only times within our opening hours are shown — everything is ready stock, so we pack it fresh when you arrive.</div>
+        </div>
+      </div>
+
+      <div id="deliveryFields" style="display:none;">
+        <div class="form-group">
+          <label for="deliveryAddress">Delivery Address</label>
+          <textarea id="deliveryAddress" placeholder="House / flat no., street, landmark…"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Pin Your Exact Location</label>
+          <div class="form-hint" style="margin-top:0;margin-bottom:8px;">Drag the pin to your doorstep, or use your current location — this is how we calculate the delivery charge and how the delivery rider finds you.</div>
+          <button type="button" class="secondary-btn" id="useLocationBtn" onclick="useMyLocation()" style="margin-bottom:10px;">📍 Use My Current Location</button>
+          <div id="deliveryMap"></div>
+          <div class="delivery-fee-box" id="deliveryFeeBox">
+            <span class="big-emoji" style="font-size:1.2rem;">📦</span> Drag the pin above to your address to calculate the delivery charge.
+          </div>
+        </div>
+      </div>
+
       <div class="form-group">
         <label for="paymentMethod">Payment Method</label>
         <select id="paymentMethod" onchange="onPaymentChange()">
@@ -630,14 +752,10 @@
       <h2>Order Placed!</h2>
       <div class="order-chit">
         <div class="stamp" id="confirmOrderNumber">PP-000000</div>
-        <div class="oline"><span>Customer</span><b id="confirmName"></b></div>
-        <div class="oline"><span>Phone</span><b id="confirmPhone"></b></div>
-        <div class="oline"><span>Pickup</span><b id="confirmSlot"></b></div>
-        <div class="oline"><span>Payment</span><b id="confirmPayment"></b></div>
-        <div class="oline"><span>Total</span><b id="confirmTotal"></b></div>
+        <div id="confirmDetailsLines"></div>
       </div>
       <div id="qrcode-box"></div>
-      <p class="footer-note">Show this order number (or the QR code) at the counter when you arrive at<br><b>Pingale Provisions, Ganpati Galli, Kasoda</b>.</p>
+      <p class="footer-note" id="confirmFooterNote"></p>
       <button class="secondary-btn" onclick="startNewOrder()">Place Another Order</button>
     </div>
   </div>
@@ -1003,10 +1121,121 @@
     renderCheckoutSummary();
     closeOverlay('cartOverlay');
     document.getElementById('checkoutOverlay').classList.add('show');
+    if (fulfillmentType === 'delivery'){
+      initDeliveryMapIfNeeded();
+      setTimeout(() => { if (deliveryMap) deliveryMap.invalidateSize(); }, 250);
+    }
   }
   function onPaymentChange(){
     const val = document.getElementById('paymentMethod').value;
     document.getElementById('advanceUpiNote').classList.toggle('show', val === 'Advance UPI');
+  }
+
+  // ================= PICKUP vs DELIVERY =================
+  let fulfillmentType = 'pickup';
+  let deliveryMap = null, deliveryMarker = null, deliveryMapInited = false;
+  let deliveryLat = null, deliveryLng = null, deliveryDistanceKm = null, deliveryFee = null;
+
+  const DELIVERY_FREE_KM = 3;
+  const DELIVERY_RATE_PER_KM = 7;
+
+  function setFulfillmentType(type){
+    fulfillmentType = type;
+    document.getElementById('ftPickupBtn').classList.toggle('active', type === 'pickup');
+    document.getElementById('ftDeliveryBtn').classList.toggle('active', type === 'delivery');
+    document.getElementById('pickupFields').style.display = type === 'pickup' ? '' : 'none';
+    document.getElementById('deliveryFields').style.display = type === 'delivery' ? '' : 'none';
+    if (type === 'delivery'){
+      initDeliveryMapIfNeeded();
+      setTimeout(() => { if (deliveryMap) deliveryMap.invalidateSize(); }, 200);
+    }
+  }
+
+  // Straight-line distance between two lat/lng points, in kilometres.
+  function haversineKm(lat1, lng1, lat2, lng2){
+    const R = 6371;
+    const toRad = d => d * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLng = toRad(lng2 - lng1);
+    const a = Math.sin(dLat/2) ** 2 +
+              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  // First 3 km are free; every km beyond that is charged at ₹7/km.
+  function feeForDistance(km){
+    const extraKm = Math.max(0, km - DELIVERY_FREE_KM);
+    return Math.round(extraKm * DELIVERY_RATE_PER_KM);
+  }
+
+  function initDeliveryMapIfNeeded(){
+    if (deliveryMapInited) return;
+    deliveryMapInited = true;
+    deliveryMap = L.map('deliveryMap', { attributionControl: false }).setView([SHOP_LAT, SHOP_LNG], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(deliveryMap);
+    L.control.attribution({ prefix: false }).addTo(deliveryMap);
+
+    deliveryMarker = L.marker([SHOP_LAT, SHOP_LNG], { draggable: true }).addTo(deliveryMap);
+    deliveryMarker.on('dragend', onDeliveryPinMoved);
+    deliveryMap.on('click', e => {
+      deliveryMarker.setLatLng(e.latlng);
+      onDeliveryPinMoved();
+    });
+  }
+
+  function onDeliveryPinMoved(){
+    const pos = deliveryMarker.getLatLng();
+    deliveryLat = pos.lat;
+    deliveryLng = pos.lng;
+    deliveryDistanceKm = haversineKm(SHOP_LAT, SHOP_LNG, deliveryLat, deliveryLng);
+    deliveryFee = feeForDistance(deliveryDistanceKm);
+    renderDeliveryFeeBox();
+  }
+
+  function renderDeliveryFeeBox(){
+    const box = document.getElementById('deliveryFeeBox');
+    box.classList.remove('pending', 'error');
+    if (deliveryDistanceKm == null){
+      box.classList.add('pending');
+      box.innerHTML = '📦 Drag the pin above to your address to calculate the delivery charge.';
+      return;
+    }
+    const km = deliveryDistanceKm.toFixed(1);
+    if (deliveryFee === 0){
+      box.innerHTML = `📍 ${km} km from the shop — <b>Delivery is FREE</b> (within ${DELIVERY_FREE_KM} km).`;
+    } else {
+      box.innerHTML = `📍 ${km} km from the shop — Delivery charge: <b>₹${deliveryFee}</b> (first ${DELIVERY_FREE_KM} km free, ₹${DELIVERY_RATE_PER_KM}/km after).`;
+    }
+  }
+
+  function useMyLocation(){
+    if (!navigator.geolocation){
+      const box = document.getElementById('deliveryFeeBox');
+      box.classList.add('error');
+      box.innerHTML = '⚠️ Location is not supported on this device. Please drag the pin manually.';
+      return;
+    }
+    initDeliveryMapIfNeeded();
+    const btn = document.getElementById('useLocationBtn');
+    btn.disabled = true;
+    btn.textContent = 'Locating…';
+    navigator.geolocation.getCurrentPosition(pos => {
+      btn.disabled = false;
+      btn.textContent = '📍 Use My Current Location';
+      const { latitude, longitude } = pos.coords;
+      deliveryMap.setView([latitude, longitude], 16);
+      deliveryMarker.setLatLng([latitude, longitude]);
+      onDeliveryPinMoved();
+    }, err => {
+      btn.disabled = false;
+      btn.textContent = '📍 Use My Current Location';
+      const box = document.getElementById('deliveryFeeBox');
+      box.classList.add('error');
+      box.innerHTML = `⚠️ Could not get your location. Please drag the pin on the map to your address instead.`;
+    }, { enableHighAccuracy: true, timeout: 10000 });
   }
 
   // ================= SHOP HOURS / PICKUP SLOTS =================
@@ -1112,14 +1341,23 @@
     clearCheckoutError();
     const name = document.getElementById('custName').value.trim();
     const phone = document.getElementById('custPhone').value.trim();
-    const slot = document.getElementById('pickupSlot').value;
     const payment = document.getElementById('paymentMethod').value;
     const note = document.getElementById('orderNote').value.trim();
 
     if (!name) return showCheckoutError('Please enter your name.');
     if (!/^\d{10}$/.test(phone)) return showCheckoutError('Please enter a valid 10-digit mobile number.');
-    if (!slot) return showCheckoutError('Please choose a pickup time.');
     if (!CART.length) return showCheckoutError('Your cart is empty.');
+
+    let slot = '';
+    let deliveryAddress = '';
+    if (fulfillmentType === 'pickup'){
+      slot = document.getElementById('pickupSlot').value;
+      if (!slot) return showCheckoutError('Please choose a pickup time.');
+    } else {
+      deliveryAddress = document.getElementById('deliveryAddress').value.trim();
+      if (!deliveryAddress) return showCheckoutError('Please enter your delivery address.');
+      if (deliveryLat == null || deliveryLng == null) return showCheckoutError('Please drag the pin on the map to your delivery location.');
+    }
 
     const btn = document.getElementById('placeOrderBtn');
     btn.disabled = true;
@@ -1134,11 +1372,17 @@
       order_number: orderNumber,
       customer_name: name,
       customer_phone: phone,
-      pickup_slot: slot,
+      pickup_slot: fulfillmentType === 'pickup' ? slot : null,
       payment_method: payment,
       status: 'new',
       total: total,
-      note: note || null
+      note: note || null,
+      fulfillment_type: fulfillmentType,
+      delivery_address: fulfillmentType === 'delivery' ? deliveryAddress : null,
+      delivery_lat: fulfillmentType === 'delivery' ? deliveryLat : null,
+      delivery_lng: fulfillmentType === 'delivery' ? deliveryLng : null,
+      delivery_distance_km: fulfillmentType === 'delivery' ? Number(deliveryDistanceKm.toFixed(2)) : null,
+      delivery_fee: fulfillmentType === 'delivery' ? deliveryFee : 0
     };
 
     const { error: orderErr } = await sb.from('orders').insert(orderRow);
@@ -1165,7 +1409,12 @@
       return showCheckoutError('Order created but items failed to save: ' + itemsErr.message + '. Please contact the shop with your order number ' + orderNumber + '.');
     }
 
-    lastOrderPayload = { orderNumber, name, phone, slot, payment, total };
+    lastOrderPayload = {
+      orderNumber, name, phone, slot, payment, total,
+      fulfillmentType, deliveryAddress,
+      deliveryDistanceKm: fulfillmentType === 'delivery' ? deliveryDistanceKm : null,
+      deliveryFee: fulfillmentType === 'delivery' ? deliveryFee : null
+    };
 
     btn.disabled = false;
     btn.textContent = 'Place Order';
@@ -1176,9 +1425,14 @@
     document.getElementById('custName').value = '';
     document.getElementById('custPhone').value = '';
     document.getElementById('pickupSlot').value = '';
+    document.getElementById('deliveryAddress').value = '';
     document.getElementById('orderNote').value = '';
     document.getElementById('paymentMethod').value = 'Cash at Pickup';
     onPaymentChange();
+    deliveryLat = deliveryLng = deliveryDistanceKm = deliveryFee = null;
+    if (deliveryMarker) deliveryMarker.setLatLng([SHOP_LAT, SHOP_LNG]);
+    renderDeliveryFeeBox();
+    setFulfillmentType('pickup');
 
     closeOverlay('checkoutOverlay');
     showConfirmation(lastOrderPayload);
@@ -1186,15 +1440,41 @@
 
   function showConfirmation(o){
     document.getElementById('confirmOrderNumber').textContent = o.orderNumber;
-    document.getElementById('confirmName').textContent = o.name;
-    document.getElementById('confirmPhone').textContent = o.phone;
-    document.getElementById('confirmSlot').textContent = formatSlotForDisplay(o.slot);
-    document.getElementById('confirmPayment').textContent = o.payment;
-    document.getElementById('confirmTotal').textContent = '₹' + rupees(o.total);
+
+    let lines = `
+      <div class="oline"><span>Customer</span><b>${escapeHtml(o.name)}</b></div>
+      <div class="oline"><span>Phone</span><b>${escapeHtml(o.phone)}</b></div>
+    `;
+    if (o.fulfillmentType === 'delivery'){
+      lines += `<div class="oline"><span>Delivery to</span><b>${escapeHtml(o.deliveryAddress)}</b></div>`;
+      if (o.deliveryDistanceKm != null){
+        lines += `<div class="oline"><span>Distance</span><b>${o.deliveryDistanceKm.toFixed(1)} km</b></div>`;
+      }
+    } else {
+      lines += `<div class="oline"><span>Pickup</span><b>${formatSlotForDisplay(o.slot)}</b></div>`;
+    }
+    lines += `<div class="oline"><span>Payment</span><b>${escapeHtml(o.payment)}</b></div>`;
+    lines += `<div class="oline"><span>Items Total</span><b>₹${rupees(o.total)}</b></div>`;
+    if (o.fulfillmentType === 'delivery'){
+      const feeText = (o.deliveryFee != null) ? ('₹' + rupees(o.deliveryFee)) : 'To be confirmed';
+      lines += `<div class="oline"><span>Delivery Fee</span><b>${feeText}</b></div>`;
+      const grand = o.total + (o.deliveryFee || 0);
+      lines += `<div class="oline" style="border-top:1px dashed var(--paper-line); margin-top:4px; padding-top:6px;"><span>Grand Total</span><b>₹${rupees(grand)}</b></div>`;
+    }
+    document.getElementById('confirmDetailsLines').innerHTML = lines;
+
+    const noteEl = document.getElementById('confirmFooterNote');
+    if (o.fulfillmentType === 'delivery'){
+      noteEl.innerHTML = `We'll pack your order and our delivery rider will bring it to your address. Keep your phone handy — they'll call before arriving!`;
+    } else {
+      noteEl.innerHTML = `Show this order number (or the QR code) at the counter when you arrive at<br><b>Pingale Provisions, Ganpati Galli, Kasoda</b>.`;
+    }
 
     const qrBox = document.getElementById('qrcode-box');
     qrBox.innerHTML = '';
-    const qrData = `Pingale Provisions Order\nOrder No: ${o.orderNumber}\nName: ${o.name}\nPhone: ${o.phone}\nPickup: ${formatSlotForDisplay(o.slot)}\nPayment: ${o.payment}\nTotal: Rs.${rupees(o.total)}`;
+    const qrData = o.fulfillmentType === 'delivery'
+      ? `Pingale Provisions Order\nOrder No: ${o.orderNumber}\nName: ${o.name}\nPhone: ${o.phone}\nDelivery to: ${o.deliveryAddress}\nPayment: ${o.payment}\nTotal: Rs.${rupees(o.total)}`
+      : `Pingale Provisions Order\nOrder No: ${o.orderNumber}\nName: ${o.name}\nPhone: ${o.phone}\nPickup: ${formatSlotForDisplay(o.slot)}\nPayment: ${o.payment}\nTotal: Rs.${rupees(o.total)}`;
     new QRCode(qrBox, { text: qrData, width: 168, height: 168, colorDark: '#1F4B3A', colorLight: '#ffffff' });
 
     document.getElementById('confirmOverlay').classList.add('show');
