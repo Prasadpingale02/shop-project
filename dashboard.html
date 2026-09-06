@@ -229,25 +229,33 @@
     .qr-settings input[type="file"]{ min-width:0; width:100%; }
     .qr-settings button{ width:100%; padding:10px; }
     .add-product-bar{
-      grid-template-columns:1fr;
+      display:flex;
+      flex-direction:column;
+      align-items:stretch;
       gap:10px; padding:12px;
     }
-    .add-product-bar > div{ width:100%; }
+    .add-product-bar > div,
+    .add-product-bar > button{ width:100%; min-width:0; }
     .add-product-bar input,
     .add-product-bar select{
       display:block; min-width:0; width:100%; max-width:100%;
     }
     .add-product-bar input[type="file"]{
-      font-size:0.72rem; padding:7px 5px; white-space:nowrap;
+      display:block; font-size:0.72rem; padding:7px 5px;
+      white-space:normal; text-overflow:ellipsis;
     }
     .add-product-bar > div[style*="grid-column"]{ grid-column:auto !important; }
     .add-product-bar button{ width:100%; padding:11px; }
     .table-scroll{
-      overflow-x:auto; -webkit-overflow-scrolling:touch;
+      width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch;
       border-radius:var(--radius); box-shadow:var(--shadow);
     }
-    .table-scroll table{ box-shadow:none; }
-    table{ width:100%; }
+    .table-scroll table{
+      min-width:900px; width:max-content; max-width:none; box-shadow:none;
+    }
+    .table-scroll th:first-child,
+    .table-scroll td:first-child{ min-width:150px; }
+    .table-scroll .image-input{ width:140px; max-width:140px; }
     th, td{ white-space:nowrap; padding:9px 10px; }
     .row-actions{ flex-direction:column; }
     .row-actions .btn-mini{ width:100%; }
