@@ -1218,24 +1218,57 @@
       box.innerHTML = '⚠️ Location is not supported on this device. Please drag the pin manually.';
       return;
     }
+    if (!window.isSecureContext && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1'){
+      const box = document.getElementById('deliveryFeeBox');
+      box.classList.add('error');
+      box.innerHTML = '⚠️ Safari requires this page to be opened over HTTPS before it can use GPS. Please open the secure site link, or drag the pin manually.';
+      return;
+    }
+
     initDeliveryMapIfNeeded();
     const btn = document.getElementById('useLocationBtn');
+    const box = document.getElementById('deliveryFeeBox');
     btn.disabled = true;
     btn.textContent = 'Locating…';
-    navigator.geolocation.getCurrentPosition(pos => {
+
+    const options = {
+      enableHighAccuracy: false,
+      timeout: 20000,
+      maximumAge: 60000
+    };
+    const showPosition = pos => {
       btn.disabled = false;
       btn.textContent = '📍 Use My Current Location';
       const { latitude, longitude } = pos.coords;
       deliveryMap.setView([latitude, longitude], 16);
       deliveryMarker.setLatLng([latitude, longitude]);
       onDeliveryPinMoved();
-    }, err => {
+    };
+    const showLocationError = err => {
       btn.disabled = false;
       btn.textContent = '📍 Use My Current Location';
-      const box = document.getElementById('deliveryFeeBox');
       box.classList.add('error');
-      box.innerHTML = `⚠️ Could not get your location. Please drag the pin on the map to your address instead.`;
-    }, { enableHighAccuracy: true, timeout: 10000 });
+      const message = err.code === 1
+        ? 'Safari blocked location access. Allow Location access for this website in iPhone Settings, then try again.'
+        : err.code === 3
+          ? 'Safari took too long to find your location. Move somewhere with a clearer GPS signal and try again.'
+          : 'Could not get your location. Check that Location Services are enabled, then try again.';
+      box.innerHTML = `⚠️ ${message} You can also drag the pin manually.`;
+    };
+
+    // A low-accuracy request is more reliable on iOS Safari. The map pin can
+    // still be adjusted manually when the browser only returns an approximate fix.
+    navigator.geolocation.getCurrentPosition(showPosition, err => {
+      if (err.code === 1){
+        showLocationError(err);
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(showPosition, showLocationError, {
+        enableHighAccuracy: true,
+        timeout: 30000,
+        maximumAge: 0
+      });
+    }, options);
   }
 
   // ================= SHOP HOURS / PICKUP SLOTS =================
