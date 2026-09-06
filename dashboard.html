@@ -242,10 +242,12 @@
     }
     .add-product-bar > div[style*="grid-column"]{ grid-column:auto !important; }
     .add-product-bar button{ width:100%; padding:11px; }
-    table{
-      display:block; width:100%; overflow-x:auto;
-      -webkit-overflow-scrolling:touch;
+    .table-scroll{
+      overflow-x:auto; -webkit-overflow-scrolling:touch;
+      border-radius:var(--radius); box-shadow:var(--shadow);
     }
+    .table-scroll table{ box-shadow:none; }
+    table{ width:100%; }
     th, td{ white-space:nowrap; padding:9px 10px; }
     .row-actions{ flex-direction:column; }
     .row-actions .btn-mini{ width:100%; }
@@ -371,6 +373,7 @@
         <button onclick="addProduct()">+ Add Product</button>
       </div>
 
+      <div class="table-scroll">
       <table>
         <thead>
           <tr>
@@ -379,6 +382,7 @@
         </thead>
         <tbody id="productsTableBody"></tbody>
       </table>
+      </div>
     </div>
 
     <!-- CUSTOMERS PAGE -->
@@ -387,6 +391,7 @@
         <h2>Customers</h2>
         <span class="pill-count" id="customersCount">0 customers</span>
       </div>
+      <div class="table-scroll">
       <table>
         <thead>
           <tr>
@@ -397,6 +402,7 @@
         </thead>
         <tbody id="customersTableBody"></tbody>
       </table>
+      </div>
     </div>
 
     <!-- REVIEWS PAGE -->
@@ -408,6 +414,7 @@
       <p style="color:var(--ink-soft); font-size:0.82rem; margin:-8px 0 16px;">
         Approved reviews appear on the storefront under "What customers are saying". Nothing shows publicly until you approve it.
       </p>
+      <div class="table-scroll">
       <table>
         <thead>
           <tr>
@@ -416,6 +423,7 @@
         </thead>
         <tbody id="reviewsTableBody"></tbody>
       </table>
+      </div>
     </div>
   </main>
 </div>
