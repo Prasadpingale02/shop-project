@@ -159,6 +159,8 @@
   .add-product-bar input, .add-product-bar select{
     width:100%; padding:8px 9px; border:1px solid var(--line); border-radius:7px; font-size:0.82rem;
   }
+  .add-product-bar > div{ min-width:0; }
+  .add-product-bar input[type="file"]{ min-width:0; max-width:100%; overflow:hidden; }
   .add-product-bar button{
     background:var(--green); color:#fff; border:none; padding:9px 14px; border-radius:7px; font-weight:700; font-size:0.82rem;
   }
@@ -229,6 +231,14 @@
     .add-product-bar{
       grid-template-columns:1fr;
       gap:10px; padding:12px;
+    }
+    .add-product-bar > div{ width:100%; }
+    .add-product-bar input,
+    .add-product-bar select{
+      display:block; min-width:0; width:100%; max-width:100%;
+    }
+    .add-product-bar input[type="file"]{
+      font-size:0.72rem; padding:7px 5px; white-space:nowrap;
     }
     .add-product-bar > div[style*="grid-column"]{ grid-column:auto !important; }
     .add-product-bar button{ width:100%; padding:11px; }
