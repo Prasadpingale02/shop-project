@@ -183,7 +183,7 @@
     <div class="section-title">
       🛵 Ready to Deliver <span class="pill" id="queueCount">0</span>
     </div>
-    <div class="refresh-hint">This list updates automatically as new orders are sent out — no need to refresh.</div>
+    <div class="refresh-hint">Packed delivery orders appear here automatically and update in real time.</div>
     <div id="queueList"></div>
 
     <details>
@@ -255,14 +255,16 @@
   }
 
   // ================= DATA =================
-  let QUEUE = [];     // status = out_for_delivery
+  let QUEUE = [];     // status = packed or out_for_delivery
   let DELIVERED = [];  // status = delivered, today only
 
   async function loadDeliveries(){
     const { data: queueData, error: queueErr } = await sb
       .from('orders')
       .select('*, order_items(*)')
-      .eq('status', 'out_for_delivery')
+      // Include packed orders so the rider can see them immediately after the
+      // owner marks them ready. Keep out_for_delivery for existing orders.
+      .in('status', ['packed', 'out_for_delivery'])
       .eq('fulfillment_type', 'delivery')
       .order('created_at', { ascending: true });
 

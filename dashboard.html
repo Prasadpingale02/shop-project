@@ -453,7 +453,9 @@
     if (status === 'new'){
       actionBtn = `<button class="action-btn to-packed" onclick="advanceStatus('${o.id}','packed')">Mark as Packed</button>`;
     } else if (status === 'packed'){
-      actionBtn = `<button class="action-btn to-picked" onclick="advanceStatus('${o.id}','picked_up')">Mark as Picked Up</button>`;
+      const nextStatus = o.fulfillment_type === 'delivery' ? 'out_for_delivery' : 'picked_up';
+      const buttonLabel = o.fulfillment_type === 'delivery' ? 'Send to Delivery' : 'Mark as Picked Up';
+      actionBtn = `<button class="action-btn to-picked" onclick="advanceStatus('${o.id}','${nextStatus}')">${buttonLabel}</button>`;
     } else if (status === 'picked_up'){
       actionBtn = `<button class="action-btn to-picked" onclick="requestReview('${escapeHtml(o.order_number)}','${escapeHtml(o.customer_phone)}')">Request Review</button>`;
     }
