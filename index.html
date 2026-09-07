@@ -677,6 +677,7 @@
       <div class="cart-total-row" id="cartTotalRow" style="display:none;">
         <span>Total</span><span>₹<span id="cartTotalFull">0</span></span>
       </div>
+      <div class="form-hint" id="cartMinimumHint" style="display:none;"></div>
       <button class="primary-btn" id="toCheckoutBtn" onclick="openCheckout()">Proceed to Checkout</button>
     </div>
   </div>
@@ -827,6 +828,7 @@
   // ================= SUPABASE CLIENT =================
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const STORE_QR_KEY = 'advance_payment_qr';
+  const MIN_ORDER_TOTAL = 1500;
 
   // ================= STATE =================
   let PRODUCTS = [];
@@ -1085,17 +1087,23 @@
     const emptyMsg = document.getElementById('cartEmptyMsg');
     const totalRow = document.getElementById('cartTotalRow');
     const checkoutBtn = document.getElementById('toCheckoutBtn');
+    const minimumHint = document.getElementById('cartMinimumHint');
 
     if (!CART.length){
       wrap.innerHTML = '';
       emptyMsg.style.display = 'block';
       totalRow.style.display = 'none';
+      minimumHint.style.display = 'none';
       checkoutBtn.disabled = true;
       return;
     }
     emptyMsg.style.display = 'none';
     totalRow.style.display = 'flex';
-    checkoutBtn.disabled = false;
+    const total = cartTotal();
+    const belowMinimum = total < MIN_ORDER_TOTAL;
+    checkoutBtn.disabled = belowMinimum;
+    minimumHint.style.display = belowMinimum ? 'block' : 'none';
+    minimumHint.textContent = `Minimum order value is ₹${rupees(MIN_ORDER_TOTAL)}. Add ₹${rupees(MIN_ORDER_TOTAL - total)} more to continue.`;
 
     wrap.innerHTML = CART.map(line => `
       <div class="cart-line">
@@ -1136,6 +1144,10 @@
 
   function openCheckout(){
     if (!CART.length) return;
+    if (cartTotal() < MIN_ORDER_TOTAL){
+      renderCartLines();
+      return;
+    }
     populatePickupSlots();
     renderCheckoutSummary();
     closeOverlay('cartOverlay');
@@ -1408,6 +1420,7 @@
     if (!name) return showCheckoutError('Please enter your name.');
     if (!/^\d{10}$/.test(phone)) return showCheckoutError('Please enter a valid 10-digit mobile number.');
     if (!CART.length) return showCheckoutError('Your cart is empty.');
+    if (cartTotal() < MIN_ORDER_TOTAL) return showCheckoutError(`Minimum order value is ₹${rupees(MIN_ORDER_TOTAL)}.`);
 
     let slot = '';
     let deliveryAddress = '';
@@ -1427,6 +1440,21 @@
     const orderId = crypto.randomUUID();
     const orderNumber = generateOrderNumber();
     const total = cartTotal();
+
+    const { data: slotAvailable, error: slotError } = await sb.rpc('reserve_order_slot', {
+      p_phone: phone,
+      p_cooldown_minutes: 10
+    });
+    if (slotError){
+      btn.disabled = false;
+      btn.textContent = 'Place Order';
+      return showCheckoutError('Could not verify order frequency. Please try again.');
+    }
+    if (!slotAvailable){
+      btn.disabled = false;
+      btn.textContent = 'Place Order';
+      return showCheckoutError('Only one order per mobile number is allowed every 10 minutes. Please try again later.');
+    }
 
     const orderRow = {
       id: orderId,

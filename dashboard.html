@@ -183,6 +183,11 @@
   .badge{ padding:3px 9px; border-radius:999px; font-size:0.7rem; font-weight:700; }
   .badge.active{ background:#E4F2E9; color:var(--green-dark); }
   .badge.inactive{ background:#F1EFE7; color:var(--ink-soft); }
+  .category-divider td{
+    background:#F1F7F2; color:var(--green-dark); font-weight:800;
+    font-size:0.86rem; letter-spacing:0.2px; padding:9px 12px;
+    border-top:2px solid var(--line);
+  }
 
   .save-toast{
     position:fixed; bottom:20px; right:20px; background:var(--green-dark); color:#fff;
@@ -353,7 +358,8 @@
         </div>
         <div>
           <label>Category</label>
-          <input type="text" id="newCategory" placeholder="e.g. Pulses (Dal)" />
+          <input type="text" id="newCategory" list="categoryOptions" placeholder="Search or enter a category…" autocomplete="off" />
+          <datalist id="categoryOptions"></datalist>
         </div>
         <div>
           <label>Price (₹)</label>
@@ -677,13 +683,58 @@
     const { data, error } = await sb.from('products').select('*').order('category').order('name');
     if (error){ console.error(error); return; }
     PRODUCTS = data || [];
+    refreshCategoryOptions();
     renderProducts();
+  }
+
+  function refreshCategoryOptions(){
+    const options = document.getElementById('categoryOptions');
+    if (!options) return;
+    const categories = [...new Set(PRODUCTS.map(productCategoryGroup))].sort((a, b) => a.localeCompare(b));
+    options.innerHTML = categories
+      .map(category => `<option value="${escapeHtml(category)}"></option>`)
+      .join('');
   }
 
   function renderProducts(){
     document.getElementById('productsCount').textContent = `${PRODUCTS.length} products`;
     const body = document.getElementById('productsTableBody');
-    body.innerHTML = PRODUCTS.map(p => productRowHtml(p)).join('');
+    const grouped = {};
+    PRODUCTS.forEach(product => {
+      const category = productCategoryGroup(product);
+      if (!grouped[category]) grouped[category] = [];
+      grouped[category].push(product);
+    });
+    const categoryOrder = ['Pulses (Dal)', 'Cooking Oil', 'Grains & Flours', 'Sugar', 'Essentials', 'General'];
+    const categories = Object.keys(grouped).sort((a, b) => {
+      const aIndex = categoryOrder.indexOf(a);
+      const bIndex = categoryOrder.indexOf(b);
+      if (aIndex !== -1 || bIndex !== -1){
+        return (aIndex === -1 ? categoryOrder.length : aIndex) -
+          (bIndex === -1 ? categoryOrder.length : bIndex);
+      }
+      return a.localeCompare(b);
+    });
+    body.innerHTML = categories.map(category => `
+      <tr class="category-divider">
+        <td colspan="9">📂 ${escapeHtml(category)} <span style="font-weight:600;color:var(--ink-soft);">(${grouped[category].length})</span></td>
+      </tr>
+      ${grouped[category].sort((a, b) => a.name.localeCompare(b.name)).map(productRowHtml).join('')}
+    `).join('');
+  }
+
+  function productCategoryGroup(product){
+    const category = String(product.category || '').trim();
+    const name = String(product.name || '').toLowerCase();
+    if (/\b(dal|urad|moong|masoor|tur|gram)\b/i.test(name) || /pulses?|dal/i.test(category)){
+      return 'Pulses (Dal)';
+    }
+    if (/oil/i.test(name) || /oil/i.test(category)) return 'Cooking Oil';
+    if (/sugar/i.test(name) || /sugar/i.test(category)) return 'Sugar';
+    if (/atta|besan|maida|rice|suji|wheat/i.test(name) || /grain|flour/i.test(category)){
+      return 'Grains & Flours';
+    }
+    return category || 'General';
   }
 
   function productRowHtml(p){
@@ -783,7 +834,7 @@
     const imageFile = document.getElementById('newImage').files[0];
 
     if (!name || isNaN(price)){
-      alert('Please enter at least a product name and price.');
+      alert('Please enter a product name and a valid price.');
       return;
     }
 
@@ -801,6 +852,7 @@
     if (error){ alert('Could not add product: ' + error.message); return; }
 
     PRODUCTS.push(data[0]);
+    refreshCategoryOptions();
     renderProducts();
     ['newName','newCategory','newPrice','newMrp','newUnit','newImage'].forEach(id => document.getElementById(id).value = '');
     showToast('Product added — now live on storefront');

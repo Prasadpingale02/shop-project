@@ -28,3 +28,35 @@ create policy "Authenticated admins can upload site assets"
   on storage.objects for insert to authenticated with check (bucket_id = 'site-assets');
 create policy "Authenticated admins can update site assets"
   on storage.objects for update to authenticated using (bucket_id = 'site-assets');
+
+-- Per-phone order cooldown to limit rapid repeat orders.
+create table if not exists public.order_rate_limits (
+  phone text primary key,
+  last_order_at timestamptz not null
+);
+
+alter table public.order_rate_limits enable row level security;
+
+create or replace function public.reserve_order_slot(p_phone text, p_cooldown_minutes integer default 10)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_now timestamptz := now();
+  affected_rows integer;
+begin
+  insert into public.order_rate_limits(phone, last_order_at)
+  values (p_phone, v_now)
+  on conflict (phone) do update
+    set last_order_at = excluded.last_order_at
+    where public.order_rate_limits.last_order_at
+      <= v_now - make_interval(mins => p_cooldown_minutes);
+  get diagnostics affected_rows = row_count;
+  return affected_rows = 1;
+end;
+$$;
+
+revoke all on function public.reserve_order_slot(text, integer) from public;
+grant execute on function public.reserve_order_slot(text, integer) to anon, authenticated;
