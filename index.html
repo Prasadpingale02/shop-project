@@ -909,7 +909,7 @@
   function renderCatNav(){
     const nav = document.getElementById('catNav');
     if (!PRODUCTS.length){ nav.style.display = 'none'; return; }
-    const cats = [...new Set(PRODUCTS.map(p => p.category || 'General'))];
+    const cats = [...new Set(PRODUCTS.map(productCategoryGroup))];
     if (cats.length < 2){ nav.style.display = 'none'; return; }
     nav.innerHTML = cats.map((c, i) =>
       `<span class="chip${i === 0 ? ' active' : ''}" data-cat="${escapeHtml(c)}" onclick="jumpToCategory(this.dataset.cat, this)">${escapeHtml(c)}</span>`
@@ -927,7 +927,7 @@
     const filtered = searchTerm
       ? PRODUCTS.filter(p =>
           (p.name || '').toLowerCase().includes(searchTerm) ||
-          (p.category || '').toLowerCase().includes(searchTerm))
+          productCategoryGroup(p).toLowerCase().includes(searchTerm))
       : PRODUCTS;
 
     if (!filtered.length){
@@ -942,19 +942,44 @@
 
     const byCategory = {};
     filtered.forEach(p => {
-      const c = p.category || 'General';
+      const c = productCategoryGroup(p);
       if (!byCategory[c]) byCategory[c] = [];
       byCategory[c].push(p);
     });
 
+    const categoryOrder = ['Pulses (Dal)', 'Cooking Oil', 'Grains & Flours', 'Sugar', 'Essentials', 'General'];
+    const categories = Object.keys(byCategory).sort((a, b) => {
+      const aIndex = categoryOrder.indexOf(a);
+      const bIndex = categoryOrder.indexOf(b);
+      if (aIndex !== -1 || bIndex !== -1){
+        return (aIndex === -1 ? categoryOrder.length : aIndex) -
+          (bIndex === -1 ? categoryOrder.length : bIndex);
+      }
+      return a.localeCompare(b);
+    });
+
     let html = '';
-    Object.keys(byCategory).forEach(cat => {
+    categories.forEach(cat => {
       html += `<div class="category-title" id="cat-${slugify(cat)}">${escapeHtml(cat)}</div><div class="grid">`;
-      byCategory[cat].forEach(p => { html += productCardHtml(p); });
+      byCategory[cat].sort((a, b) => a.name.localeCompare(b.name)).forEach(p => { html += productCardHtml(p); });
       html += `</div>`;
     });
     root.innerHTML = html;
     updateAllCartBadges();
+  }
+
+  function productCategoryGroup(product){
+    const category = String(product.category || '').trim();
+    const name = String(product.name || '').toLowerCase();
+    if (/\b(dal|urad|moong|masoor|tur|gram)\b/i.test(name) || /pulses?|dal/i.test(category)){
+      return 'Pulses (Dal)';
+    }
+    if (/oil/i.test(name) || /oil/i.test(category)) return 'Cooking Oil';
+    if (/sugar/i.test(name) || /sugar/i.test(category)) return 'Sugar';
+    if (/atta|besan|maida|rice|suji|wheat/i.test(name) || /grain|flour/i.test(category)){
+      return 'Grains & Flours';
+    }
+    return category || 'General';
   }
 
   function updateAllCartBadges(){
@@ -984,7 +1009,7 @@
         <div class="card">
           ${badgeHtml}
           ${p.image_url ? `<img class="product-image" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy">` : ''}
-          <div class="pcat">${escapeHtml(p.category||'')}</div>
+          <div class="pcat">${escapeHtml(productCategoryGroup(p))}</div>
           <div class="pname">${escapeHtml(p.name)}</div>
           <div class="price-row"><span class="price">₹${rupees(p.price)}</span><span class="unit-note">/ ${escapeHtml(p.unit)}</span> ${mrpHtml}</div>
           <select class="weight-select" id="weight-${p.id}">${options}</select>
@@ -995,7 +1020,7 @@
         <div class="card">
           ${badgeHtml}
           ${p.image_url ? `<img class="product-image" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy">` : ''}
-          <div class="pcat">${escapeHtml(p.category||'')}</div>
+          <div class="pcat">${escapeHtml(productCategoryGroup(p))}</div>
           <div class="pname">${escapeHtml(p.name)}</div>
           <div class="price-row"><span class="price">₹${rupees(p.price)}</span><span class="unit-note">/ ${escapeHtml(p.unit)}</span> ${mrpHtml}</div>
           <div class="qty-row">
