@@ -155,3 +155,75 @@ from items
 where not exists (
   select 1 from public.products p where lower(coalesce(p.product_name, p.name)) = lower(items.item)
 );
+
+-- Requested 50-product starter catalogue. Prices and images remain unset so
+-- the owner can enter current retail prices and upload the correct product
+-- photo from the admin dashboard before making each row available.
+with requested(name, marathi_name, category, unit, weight) as (
+  values
+  ('Rice','तांदूळ','Rice & Grains','kg','1 kg'),
+  ('Wheat','गहू','Rice & Grains','kg','1 kg'),
+  ('Atta','पीठ','Atta & Flour','kg','1 kg'),
+  ('Maida',null,'Atta & Flour','kg','1 kg'),
+  ('Besan','बेसन','Atta & Flour','kg','1 kg'),
+  ('Toor Dal','तूर डाळ','Dal & Pulses','kg','1 kg'),
+  ('Moong Dal','मूग डाळ','Dal & Pulses','kg','1 kg'),
+  ('Chana Dal','हरभरा डाळ','Dal & Pulses','kg','1 kg'),
+  ('Masoor Dal','मसूर डाळ','Dal & Pulses','kg','1 kg'),
+  ('Urad Dal','उडीद डाळ','Dal & Pulses','kg','1 kg'),
+  ('Sugar','साखर','Sugar, Salt & Jaggery','kg','1 kg'),
+  ('Salt','मीठ','Sugar, Salt & Jaggery','kg','1 kg'),
+  ('Jaggery','गूळ','Sugar, Salt & Jaggery','kg','1 kg'),
+  ('Sunflower Oil','सूर्यफूल तेल','Oil & Ghee','litre','1 L'),
+  ('Soybean Oil','सोयाबीन तेल','Oil & Ghee','litre','1 L'),
+  ('Ghee','तूप','Oil & Ghee','pack','500 ml'),
+  ('Turmeric','हळद','Masala & Spices','pack','100 g'),
+  ('Chilli Powder','लाल तिखट','Masala & Spices','pack','100 g'),
+  ('Coriander Powder','धणे पावडर','Masala & Spices','pack','100 g'),
+  ('Cumin','जिरे','Masala & Spices','pack','100 g'),
+  ('Garam Masala',null,'Masala & Spices','pack','100 g'),
+  ('Tea',null,'Tea & Coffee','pack','250 g'),
+  ('Coffee',null,'Tea & Coffee','pack','100 g'),
+  ('Biscuits',null,'Biscuits & Snacks','pack','100 g'),
+  ('Potato Chips',null,'Biscuits & Snacks','pack','100 g'),
+  ('Namkeen',null,'Biscuits & Snacks','pack','200 g'),
+  ('Poha','पोहे','Rice & Grains','kg','1 kg'),
+  ('Sabudana','साबुदाणा','Rice & Grains','kg','1 kg'),
+  ('Noodles',null,'Instant Food','pack','70 g'),
+  ('Pasta',null,'Instant Food','pack','500 g'),
+  ('Bread',null,'Dairy & Breakfast','pack','400 g'),
+  ('Milk',null,'Dairy & Breakfast','litre','1 L'),
+  ('Curd','दही','Dairy & Breakfast','pack','500 g'),
+  ('Butter',null,'Dairy & Breakfast','pack','100 g'),
+  ('Cheese',null,'Dairy & Breakfast','pack','200 g'),
+  ('Tomato','टोमॅटो','Fresh Vegetables','kg','1 kg'),
+  ('Onion','कांदा','Fresh Vegetables','kg','1 kg'),
+  ('Potato','बटाटा','Fresh Vegetables','kg','1 kg'),
+  ('Green Chilli','हिरवी मिरची','Fresh Vegetables','kg','250 g'),
+  ('Ginger','आले','Fresh Vegetables','kg','250 g'),
+  ('Garlic','लसूण','Fresh Vegetables','kg','250 g'),
+  ('Banana','केळी','Fruits','dozen','1 dozen'),
+  ('Apple','सफरचंद','Fruits','kg','1 kg'),
+  ('Shampoo',null,'Personal Care','pack','180 ml'),
+  ('Bath Soap',null,'Personal Care','piece','100 g'),
+  ('Toothpaste',null,'Personal Care','pack','100 g'),
+  ('Washing Powder',null,'Household Cleaning','kg','1 kg'),
+  ('Dishwash Liquid',null,'Household Cleaning','pack','500 ml'),
+  ('Floor Cleaner',null,'Household Cleaning','pack','1 L'),
+  ('Agarbatti','अगरबत्ती','Pooja & Festival Items','pack','1 pack')
+)
+insert into public.products (
+  name, product_name, marathi_name, category, brand, description, unit, weight,
+  price, selling_price, purchase_price, mrp, discount, stock_quantity,
+  low_stock_threshold, image_url, active, is_available, is_featured, is_popular,
+  is_offer, is_seasonal
+)
+select name, name, marathi_name, category, null,
+       'Update current store price, stock and product photo in the admin dashboard.',
+       unit, weight, 0, 0, null, null, 0, 0, 5, null, false, false,
+       false, false, false, category in ('Fresh Vegetables','Fruits')
+from requested r
+where not exists (
+  select 1 from public.products p
+  where lower(coalesce(p.product_name, p.name)) = lower(r.name)
+);
