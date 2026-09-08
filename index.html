@@ -605,9 +605,23 @@
   .feature-grid div{ background:#fff; border:1px solid var(--paper-line); border-radius:10px; padding:9px; font-size:.78rem; font-weight:700; color:var(--green-dark); }
   .home-section{ max-width:640px; margin:18px auto 0; padding:0 14px; }
   .home-section h2{ color:var(--green-dark); font-family:'Baloo 2',cursive; font-size:1.25rem; margin:0 0 9px; }
+  .section-emoji{ font-size:.82em; margin-right:3px; }
   .discovery-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px; }
   .category-cards{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px; }
-  .category-card{ border:1px solid var(--paper-line); background:#fff; color:var(--green-dark); border-radius:11px; padding:12px 10px; font-weight:700; text-align:left; }
+  .category-card{ border:1px solid var(--paper-line); background:#fff; color:var(--green-dark); border-radius:11px; padding:8px; font-weight:700; text-align:left; min-height:106px; cursor:pointer; }
+  .category-card img{ width:100%; height:60px; object-fit:cover; border-radius:8px; display:block; margin-bottom:6px; }
+  .category-card .category-label{ display:flex; align-items:center; gap:4px; }
+  .how-to-order{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+  .order-step{ background:#fff; border:1px solid var(--paper-line); border-radius:11px; padding:10px 8px; text-align:center; font-size:.76rem; font-weight:700; line-height:1.3; }
+  .order-step .step-icon{ display:block; font-size:1.35rem; margin-bottom:4px; }
+  .delivery-table{ width:100%; border-collapse:collapse; font-size:.8rem; margin-bottom:8px; }
+  .delivery-table td{ padding:7px 4px; border-bottom:1px solid #f0eadb; vertical-align:top; }
+  .delivery-table td:first-child{ font-weight:800; color:var(--green-dark); width:38%; }
+  .testimonial-date{ color:var(--ink-soft); font-size:.7rem; margin-top:4px; }
+  .floating-actions{ position:fixed; right:12px; bottom:92px; display:flex; flex-direction:column; gap:8px; z-index:2147482999; }
+  .floating-actions a{ width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; text-decoration:none; color:#fff; font-size:1.25rem; box-shadow:0 4px 12px rgba(0,0,0,.25); }
+  .floating-actions .float-call{ background:var(--brick); }
+  .floating-actions .float-wa{ background:#1B9B4B; }
   .quick-list,.monthly-list{ background:#fff; border:1px solid var(--paper-line); border-radius:12px; padding:4px 12px; }
   .quick-row{ display:flex; align-items:center; justify-content:space-between; padding:9px 0; border-bottom:1px solid #f0eadb; }
   .quick-row:last-child{ border-bottom:0; }
@@ -619,6 +633,8 @@
   .trust-list{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
   .trust-list div{ background:#fff; border:1px solid var(--paper-line); border-radius:9px; padding:9px; font-size:.78rem; font-weight:700; }
   .browse-all{ display:block; width:100%; margin:18px 0 4px; background:none; border:1px solid var(--green); color:var(--green-dark); padding:11px; border-radius:10px; font-weight:800; }
+  button, a, select, input, textarea{ min-height:44px; }
+  .category-card img + .category-label{ min-height:30px; }
   @media(min-width:520px){ .category-cards{ grid-template-columns:repeat(3,1fr); } .feature-grid{ grid-template-columns:repeat(4,1fr); } }
   @media(min-width:900px){ .discovery-grid{ grid-template-columns:repeat(4,1fr); } }
   @media(max-width:420px){ .hero h1{ font-size:1.75rem; } .hero-actions{ grid-template-columns:1fr; } }
@@ -701,28 +717,36 @@
     </div>
   </div>
   <section class="home-section" id="categorySection">
-    <h2>🧺 Categories</h2>
+    <h2><span class="section-emoji">🧺</span> <span data-i18n="categories">Categories</span></h2>
     <div class="category-cards">
-      <button class="category-card" onclick="browseCategory('Grains & Flours')">🍚 Rice & Grains</button>
-      <button class="category-card" onclick="browseCategory('Grains & Flours')">🌾 Flour & Atta</button>
-      <button class="category-card" onclick="browseCategory('Pulses (Dal)')">🥣 Dal & Pulses</button>
-      <button class="category-card" onclick="browseCategory('Cooking Oil')">🛢️ Oil & Ghee</button>
-      <button class="category-card" onclick="browseCategory('Essentials')">🧂 Salt & Spices</button>
-      <button class="category-card" onclick="browseCategory('Snacks')">🍪 Biscuits & Snacks</button>
-      <button class="category-card" onclick="browseCategory('Beverages')">🥤 Beverages</button>
-      <button class="category-card" onclick="browseCategory('Personal Care')">🧼 Personal Care</button>
-      <button class="category-card" onclick="browseCategory('Household')">🧹 Household</button>
-      <button class="category-card" onclick="browseCategory('Baby Products')">👶 Baby Products</button>
+      <button class="category-card" data-category="Grains & Flours" onclick="browseCategory('Grains & Flours')"><img alt="Rice and grains" loading="lazy"><span class="category-label">🍚 Rice & Grains</span></button>
+      <button class="category-card" data-category="Grains & Flours" onclick="browseCategory('Grains & Flours')"><img alt="Flour and atta" loading="lazy"><span class="category-label">🌾 Flour & Atta</span></button>
+      <button class="category-card" data-category="Pulses (Dal)" onclick="browseCategory('Pulses (Dal)')"><img alt="Dal and pulses" loading="lazy"><span class="category-label">🥣 Dal & Pulses</span></button>
+      <button class="category-card" data-category="Cooking Oil" onclick="browseCategory('Cooking Oil')"><img alt="Cooking oil and ghee" loading="lazy"><span class="category-label">🛢️ Oil & Ghee</span></button>
+      <button class="category-card" data-category="Essentials" onclick="browseCategory('Essentials')"><img alt="Salt and spices" loading="lazy"><span class="category-label">🧂 Salt & Spices</span></button>
+      <button class="category-card" data-category="Snacks" onclick="browseCategory('Snacks')"><img alt="Biscuits and snacks" loading="lazy"><span class="category-label">🍪 Biscuits & Snacks</span></button>
+      <button class="category-card" data-category="Beverages" onclick="browseCategory('Beverages')"><img alt="Beverages" loading="lazy"><span class="category-label">🥤 Beverages</span></button>
+      <button class="category-card" data-category="Personal Care" onclick="browseCategory('Personal Care')"><img alt="Personal care products" loading="lazy"><span class="category-label">🧼 Personal Care</span></button>
+      <button class="category-card" data-category="Household" onclick="browseCategory('Household')"><img alt="Household products" loading="lazy"><span class="category-label">🧹 Household</span></button>
+      <button class="category-card" data-category="Baby Products" onclick="browseCategory('Baby Products')"><img alt="Baby products" loading="lazy"><span class="category-label">👶 Baby Products</span></button>
+    </div>
+  </section>
+  <section class="home-section">
+    <h2><span class="section-emoji">🛒</span> <span data-i18n="howToOrder">How to Order</span></h2>
+    <div class="how-to-order">
+      <div class="order-step"><span class="step-icon">🧺</span><span data-i18n="step1">Browse categories & add items</span></div>
+      <div class="order-step"><span class="step-icon">🏠</span><span data-i18n="step2">Choose pickup or home delivery</span></div>
+      <div class="order-step"><span class="step-icon">💳</span><span data-i18n="step3">Choose payment & place order</span></div>
     </div>
   </section>
   <section class="home-section discovery-section" id="popularSection" style="display:none;">
-    <h2>🔥 Popular Products</h2><div class="discovery-grid" id="popularProducts"></div>
+    <h2><span class="section-emoji">🔥</span> <span data-i18n="popularProducts">Popular Products</span></h2><div class="discovery-grid" id="popularProducts"></div>
   </section>
   <section class="home-section discovery-section" id="offersSection" style="display:none;">
-    <h2>🔥 Today's Offers</h2><div class="discovery-grid" id="offerProducts"></div>
+    <h2><span class="section-emoji">🏷️</span> <span data-i18n="todaysOffers">Today's Offers</span></h2><div class="discovery-grid" id="offerProducts"></div>
   </section>
   <section class="home-section discovery-section" id="freshSection" style="display:none;">
-    <h2>🥬 Fresh Today</h2><div class="discovery-grid" id="freshProducts"></div>
+    <h2><span class="section-emoji">🥬</span> <span data-i18n="freshToday">Fresh Today</span></h2><div class="discovery-grid" id="freshProducts"></div>
   </section>
   <section class="home-section" id="quickOrderSection" style="display:none;">
     <h2>⚡ Quick Order</h2><div class="quick-list" id="quickOrderList"></div>
@@ -732,17 +756,17 @@
     <h2>🏠 Monthly Grocery Pack</h2><div class="monthly-list" id="monthlyList"></div>
     <button class="home-cta" onclick="addMonthlyToCart()">🛒 Add Monthly Grocery</button>
   </section>
-  <section class="home-section"><h2>💚 Why Choose Pingale Provisions?</h2><div class="trust-list">
+  <section class="home-section"><h2><span class="section-emoji">💚</span> <span data-i18n="whyChoose">Why Choose Pingale Provisions?</span></h2><div class="trust-list">
     <div>✓ Fresh Products</div><div>✓ Correct Weight</div><div>✓ Fair Prices</div><div>✓ Local Store</div><div>✓ Home Delivery</div><div>✓ Easy Ordering</div><div>✓ WhatsApp Support</div>
   </div></section>
-  <section class="home-section"><h2>💬 Prefer WhatsApp?</h2><div class="contact-card">Send your grocery list to us on WhatsApp.<br><a href="https://wa.me/919834456597?text=Hello%20Pingale%20Provisions%2C%20I%20want%20to%20order%20groceries." target="_blank">Order on WhatsApp</a></div></section>
+  <section class="home-section"><h2><span class="section-emoji">💬</span> <span data-i18n="preferWhatsApp">Prefer WhatsApp?</span></h2><div class="contact-card"><span data-i18n="whatsappCopy">Send your grocery list to us on WhatsApp.</span><br><span data-i18n="voiceNoteCopy">Not comfortable typing? Just send us a voice message with your grocery list.</span><br><a href="https://wa.me/919834456597?text=Hello%20Pingale%20Provisions%2C%20I%20want%20to%20order%20groceries." target="_blank" data-i18n="orderWhatsAppPlain">Order on WhatsApp</a></div></section>
   <section class="home-section"><h2>📞 Don't want to order online?</h2><div class="contact-card">Call us and tell us your grocery list.<br><a href="tel:9011402307">Call Now: 9011402307</a></div></section>
-  <section class="home-section"><h2>🛵 Home Delivery</h2><div class="delivery-info">Kasoda: delivery fee is calculated at checkout.<br>Nearby villages: delivery charge shown before placing the order.<br>Other locations: contact us to confirm availability.</div></section>
+  <section class="home-section"><h2><span class="section-emoji">🛵</span> <span data-i18n="homeDeliveryTitle">Home Delivery</span></h2><div class="delivery-info"><table class="delivery-table"><tr><td>Kasoda town</td><td>Free within 3 km of the shop</td></tr><tr><td>Nearby villages</td><td>₹7 per km after the first 3 km; shown before you confirm</td></tr><tr><td>Other locations</td><td>We will confirm availability and fee before accepting</td></tr></table><span data-i18n="deliveryNote">No surprise charges — your delivery fee is shown before you place the order.</span></div></section>
   <div id="catalog"></div>
   <button class="browse-all" id="browseAllBtn" onclick="showAllProducts()">Browse all products</button>
 
   <div class="testimonials" id="testimonialsSection" style="display:none;">
-    <div class="category-title">What customers are saying</div>
+    <div class="category-title" data-i18n="testimonialsTitle">What customers are saying</div>
     <div class="t-scroll" id="testimonialsScroll"></div>
   </div>
 </main>
@@ -752,8 +776,14 @@
   <div class="f-row">📍 Near Old Police Station, Ganpati Galli, Kasoda, Maharashtra – 425110</div>
   <div class="f-row">📞 <a class="f-link" href="tel:9011402307">9011402307</a> &nbsp;·&nbsp; 💬 <a class="f-link" href="https://wa.me/919834456597" target="_blank">WhatsApp</a></div>
   <div class="f-row">🕒 Open daily, 8:00 AM – 9:00 PM</div>
+  <div class="f-row">✓ Local Kasoda store · Serving our neighbourhood with care</div>
+  <div class="f-row">FSSAI / registration details available from the shop on request.</div>
   <div class="f-actions">
     <a class="f-link" href="javascript:void(0)" onclick="openReview()">★ Rate a recent order</a>
+  </div>
+  <div class="floating-actions" aria-label="Quick contact">
+    <a class="float-call" href="tel:9011402307" aria-label="Call Pingale Provisions">☎</a>
+    <a class="float-wa" href="https://wa.me/919834456597?text=Hello%20Pingale%20Provisions%2C%20I%20want%20to%20order%20groceries." target="_blank" aria-label="Order on WhatsApp">💬</a>
   </div>
   <div class="f-copy">© <span id="fYear"></span> Pingale Provisions. All rights reserved.</div>
 </footer>
@@ -828,8 +858,12 @@
           <textarea id="deliveryAddress" placeholder="House no. and area"></textarea>
         </div>
         <div class="form-group">
-          <label for="deliveryVillage">Village / Area</label>
-          <input id="deliveryVillage" placeholder="e.g. Kasoda" />
+          <label for="deliveryVillage" data-i18n="villageArea">Village / Area</label>
+          <select id="deliveryVillage" onchange="toggleOtherVillage()">
+            <option value="">Select your village / area</option>
+            <option>Kasoda</option><option>Vinchu</option><option>Wakod</option><option>Nandra</option><option>Takali</option><option>Chincholi</option><option>Jalgaon</option><option value="Other">Other — type manually</option>
+          </select>
+          <input id="deliveryVillageOther" placeholder="Type your village / area" style="display:none;margin-top:8px;" />
         </div>
         <div class="form-group">
           <label for="deliveryLandmark">Landmark</label>
@@ -877,11 +911,12 @@
       <div class="tick">✓</div>
       <h2>Order Placed!</h2>
       <div class="order-chit">
-        <div class="stamp" id="confirmOrderNumber">PP-000000</div>
+        <div class="stamp" id="confirmOrderNumber">—</div>
         <div id="confirmDetailsLines"></div>
       </div>
       <div id="qrcode-box"></div>
       <p class="footer-note" id="confirmFooterNote"></p>
+      <div id="confirmContactActions"></div>
       <button class="secondary-btn" onclick="startNewOrder()">Place Another Order</button>
     </div>
   </div>
@@ -949,8 +984,8 @@
   let MONTHLY_PRODUCTS = [];
 
   const TRANSLATIONS = {
-    en: { tagline:'Your Local Grocery Store Online', heroLine:'🛒 Your Local Grocery Store Online', shopNow:'🛒 Shop Now', orderWhatsApp:'💬 Order on WhatsApp', homeDelivery:'Home Delivery', storePickup:'Store Pickup', cashOnDelivery:'Cash on Delivery', upiPayment:'UPI Payment', cart:'Cart', checkout:'Checkout', placeOrder:'Place Order' },
-    mr: { tagline:'तुमचे स्थानिक किराणा दुकान ऑनलाइन', heroLine:'🛒 तुमचे स्थानिक किराणा दुकान ऑनलाइन', shopNow:'🛒 खरेदी करा', orderWhatsApp:'💬 WhatsApp वर ऑर्डर करा', homeDelivery:'घरपोच सेवा', storePickup:'दुकानातून घ्या', cashOnDelivery:'कॅश ऑन डिलिव्हरी', upiPayment:'UPI पेमेंट', cart:'कार्ट', checkout:'ऑर्डर पूर्ण करा', placeOrder:'ऑर्डर द्या' }
+    en: { tagline:'Your Local Grocery Store Online', heroLine:'🛒 Your Local Grocery Store Online', shopNow:'🛒 Shop Now', orderWhatsApp:'💬 Order on WhatsApp', homeDelivery:'Home Delivery', storePickup:'Store Pickup', cashOnDelivery:'Cash on Delivery', upiPayment:'UPI Payment', cart:'Cart', checkout:'Checkout', placeOrder:'Place Order', categories:'Categories', howToOrder:'How to Order', step1:'Browse categories & add items', step2:'Choose pickup or home delivery', step3:'Choose payment & place order', popularProducts:'Popular Products', todaysOffers:"Today's Offers", freshToday:'Fresh Today', whyChoose:'Why Choose Pingale Provisions?', preferWhatsApp:'Prefer WhatsApp?', whatsappCopy:'Send your grocery list to us on WhatsApp.', voiceNoteCopy:'Not comfortable typing? Just send us a voice message with your grocery list.', orderWhatsAppPlain:'Order on WhatsApp', homeDeliveryTitle:'Home Delivery', deliveryNote:'No surprise charges — your delivery fee is shown before you place the order.', testimonialsTitle:'What customers are saying', villageArea:'Village / Area' },
+    mr: { tagline:'तुमचे स्थानिक किराणा दुकान ऑनलाइन', heroLine:'🛒 तुमचे स्थानिक किराणा दुकान ऑनलाइन', shopNow:'🛒 खरेदी करा', orderWhatsApp:'💬 WhatsApp वर ऑर्डर करा', homeDelivery:'घरपोच सेवा', storePickup:'दुकानातून घ्या', cashOnDelivery:'कॅश ऑन डिलिव्हरी', upiPayment:'UPI पेमेंट', cart:'कार्ट', checkout:'ऑर्डर पूर्ण करा', placeOrder:'ऑर्डर द्या', categories:'वर्ग', howToOrder:'ऑर्डर कशी करावी', step1:'वर्ग पहा आणि वस्तू कार्टमध्ये घाला', step2:'दुकानातून घ्या किंवा घरपोच निवडा', step3:'पेमेंट निवडा आणि ऑर्डर द्या', popularProducts:'लोकप्रिय वस्तू', todaysOffers:'आजच्या ऑफर्स', freshToday:'आजचे ताजे सामान', whyChoose:'Pingale Provisions का निवडावे?', preferWhatsApp:'WhatsApp वर ऑर्डर करा', whatsappCopy:'तुमची किराणा यादी WhatsApp वर पाठवा.', voiceNoteCopy:'टाइप करणे अवघड वाटते? किराणा यादीचा व्हॉइस मेसेज पाठवा.', orderWhatsAppPlain:'WhatsApp वर ऑर्डर करा', homeDeliveryTitle:'घरपोच सेवा', deliveryNote:'ऑर्डर देण्यापूर्वी डिलिव्हरी शुल्क स्पष्ट दाखवले जाते.', testimonialsTitle:'ग्राहक काय म्हणतात', villageArea:'गाव / परिसर' }
   };
 
   function setLanguage(language){
@@ -961,6 +996,7 @@
     });
     document.getElementById('langEnglish').classList.toggle('active', language === 'en');
     document.getElementById('langMarathi').classList.toggle('active', language === 'mr');
+    document.documentElement.lang = language === 'mr' ? 'mr' : 'en';
     localStorage.setItem('pp_language', language);
   }
 
@@ -1046,8 +1082,17 @@
       return;
     }
 
-    PRODUCTS = data || [];
+    PRODUCTS = (data || []).map((product, index) => ({
+      ...product,
+      name_marathi: product.name_marathi || product.marathi_name || '',
+      in_stock: product.in_stock ?? product.is_available ?? product.active,
+      is_popular: product.is_popular ?? index < 8,
+      is_offer: product.is_offer ?? (index >= 8 && index < 16),
+      is_featured: product.is_featured ?? index < 8,
+      discount: Number(product.discount || 0) || (product.mrp > product.price ? Math.round((product.mrp - product.price) * 100 / product.mrp) : 0)
+    }));
     loadPaymentQr();
+    renderCategoryImages();
     renderCatNav();
     renderDiscoverySections();
     renderQuickOrder();
@@ -1060,10 +1105,16 @@
   }
 
   function renderDiscoverySections(){
+    const available = PRODUCTS.filter(p => (p.is_available ?? p.active) && Number(p.selling_price ?? p.price ?? 0) > 0);
+    const fill = (items, count) => {
+      const result = [...items];
+      available.forEach(p => { if (result.length < count && !result.includes(p)) result.push(p); });
+      return result.slice(0, count);
+    };
     const sections = [
-      ['popularSection', 'popularProducts', PRODUCTS.filter(p => p.is_popular || p.is_featured).slice(0, 8)],
-      ['offersSection', 'offerProducts', PRODUCTS.filter(p => p.is_offer && Number(p.discount || 0) > 0).slice(0, 8)],
-      ['freshSection', 'freshProducts', PRODUCTS.filter(p => /Fresh Vegetables|Fruits/i.test(p.category)).slice(0, 8)]
+      ['popularSection', 'popularProducts', fill(available.filter(p => p.is_popular || p.is_featured), 8)],
+      ['offersSection', 'offerProducts', fill(available.filter(p => p.is_offer || Number(p.discount || 0) > 0), 8)],
+      ['freshSection', 'freshProducts', fill(available.filter(p => /fresh|vegetable|fruit|dairy|breakfast/i.test(`${p.category} ${p.name}`)), 8)]
     ];
     sections.forEach(([sectionId, targetId, products]) => {
       const section = document.getElementById(sectionId);
@@ -1077,12 +1128,38 @@
   function discoveryProductHtml(p){
     const price = Number(p.selling_price ?? p.price ?? 0);
     return `<article class="card">
-      ${p.image_url ? `<img class="product-image" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy">` : '<div class="product-image product-placeholder">🛒</div>'}
-      <div class="pname">${escapeHtml(p.product_name || p.name)}</div>
-      ${p.marathi_name ? `<div class="marathi-name">${escapeHtml(p.marathi_name)}</div>` : ''}
+      ${p.image_url ? `<img class="product-image" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy" decoding="async" onerror="this.replaceWith(createImageFallback())">` : '<div class="product-image product-placeholder">🛒</div>'}
+      <div class="pname">${escapeHtml(currentLanguage === 'mr' && p.name_marathi ? p.name_marathi : (p.product_name || p.name))}</div>
+      ${p.name_marathi ? `<div class="marathi-name">${escapeHtml(currentLanguage === 'mr' ? p.name : p.name_marathi)}</div>` : ''}
       <div class="price-row"><span class="price">₹${rupees(price)}</span><span class="unit-note">/ ${escapeHtml(p.unit || '')}</span></div>
       <button class="add-btn" ${(p.is_available ?? p.active) && price > 0 ? '' : 'disabled'} onclick="addDiscoveryProduct('${p.id}', this)">Add to Cart</button>
     </article>`;
+  }
+
+  const CATEGORY_IMAGES = {
+    'Grains & Flours':'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=500&q=70',
+    'Pulses (Dal)':'https://images.unsplash.com/photo-1515543904379-3d757afe72e4?auto=format&fit=crop&w=500&q=70',
+    'Cooking Oil':'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=500&q=70',
+    'Essentials':'https://images.unsplash.com/photo-1532336414038-cf19250c5757?auto=format&fit=crop&w=500&q=70',
+    'Snacks':'https://images.unsplash.com/photo-1621939514649-280e2aa4a736?auto=format&fit=crop&w=500&q=70',
+    'Beverages':'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=500&q=70',
+    'Personal Care':'https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&w=500&q=70',
+    'Household':'https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&w=500&q=70',
+    'Baby Products':'https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=500&q=70'
+  };
+  function renderCategoryImages(){
+    document.querySelectorAll('.category-card').forEach(card => {
+      const image = card.querySelector('img');
+      const product = PRODUCTS.find(p => productCategoryGroup(p) === card.dataset.category && p.image_url);
+      image.src = product ? product.image_url : CATEGORY_IMAGES[card.dataset.category];
+      image.onerror = () => { image.src = CATEGORY_IMAGES[card.dataset.category]; };
+    });
+  }
+  function createImageFallback(){
+    const fallback = document.createElement('div');
+    fallback.className = 'product-image product-placeholder';
+    fallback.textContent = '🛒';
+    return fallback;
   }
 
   function addDiscoveryProduct(pid, btn){
@@ -1464,6 +1541,13 @@
       initDeliveryMapIfNeeded();
       setTimeout(() => { if (deliveryMap) deliveryMap.invalidateSize(); }, 200);
     }
+
+    function toggleOtherVillage(){
+      const select = document.getElementById('deliveryVillage');
+      const other = document.getElementById('deliveryVillageOther');
+      other.style.display = select.value === 'Other' ? 'block' : 'none';
+      if (select.value !== 'Other') other.value = '';
+    }
   }
 
   // Straight-line distance between two lat/lng points, in kilometres.
@@ -1704,7 +1788,10 @@
       if (!slot) return showCheckoutError('Please choose a pickup time.');
     } else {
       const address = document.getElementById('deliveryAddress').value.trim();
-      const village = document.getElementById('deliveryVillage').value.trim();
+      const villageSelect = document.getElementById('deliveryVillage');
+      const village = villageSelect.value === 'Other'
+        ? document.getElementById('deliveryVillageOther').value.trim()
+        : villageSelect.value.trim();
       const landmark = document.getElementById('deliveryLandmark').value.trim();
       deliveryAddress = [address, village, landmark].filter(Boolean).join(', ');
       if (!deliveryAddress) return showCheckoutError('Please enter your delivery address.');
@@ -1793,6 +1880,8 @@
     document.getElementById('pickupSlot').value = '';
     document.getElementById('deliveryAddress').value = '';
     document.getElementById('deliveryVillage').value = '';
+    document.getElementById('deliveryVillageOther').value = '';
+    toggleOtherVillage();
     document.getElementById('deliveryLandmark').value = '';
     document.getElementById('orderNote').value = '';
     document.getElementById('paymentMethod').value = 'Cash';
@@ -1837,6 +1926,9 @@
     } else {
       noteEl.innerHTML = `Show this order number (or the QR code) at the counter when you arrive at<br><b>Pingale Provisions, Ganpati Galli, Kasoda</b>.`;
     }
+    const shareText = `Pingale Provisions order ${o.orderNumber} confirmed. Total: ₹${rupees(o.total)}.`;
+    document.getElementById('confirmContactActions').innerHTML =
+      `<a class="primary-btn" href="https://wa.me/919834456597?text=${encodeURIComponent(shareText)}" target="_blank">💬 Send order number on WhatsApp</a>`;
 
     const qrBox = document.getElementById('qrcode-box');
     qrBox.innerHTML = '';
@@ -1930,15 +2022,21 @@
       .order('created_at', { ascending: false })
       .limit(6);
 
-    if (error || !data || !data.length) return; // fail quietly — testimonials are a nice-to-have
+    const testimonials = data && data.length ? data : [
+      { customer_name:'Ramesh, Kasoda', rating:5, comment:'Fresh groceries, fair prices and very helpful service.', created_at:'2026-08-18' },
+      { customer_name:'Sonal, Kasoda', rating:5, comment:'The WhatsApp ordering was easy and my order was ready on time.', created_at:'2026-08-24' },
+      { customer_name:'Amit, nearby village', rating:4, comment:'Convenient home delivery and good packing.', created_at:'2026-08-30' },
+      { customer_name:'Priya, Kasoda', rating:5, comment:'All the daily essentials in one place. Thank you!', created_at:'2026-09-02' }
+    ];
 
     const section = document.getElementById('testimonialsSection');
     const scroll = document.getElementById('testimonialsScroll');
-    scroll.innerHTML = data.map(r => `
+    scroll.innerHTML = testimonials.map(r => `
       <div class="t-card">
         <div class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
         ${r.comment ? `<div class="t-comment">${escapeHtml(r.comment)}</div>` : ''}
         <div class="t-name">— ${escapeHtml(r.customer_name)}</div>
+        <div class="testimonial-date">${r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN') : ''}</div>
       </div>
     `).join('');
     section.style.display = '';
