@@ -391,7 +391,7 @@
       <table>
         <thead>
           <tr>
-            <th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>MRP</th><th>Unit</th><th>Type</th><th>Status</th><th>Actions</th>
+            <th>Image</th><th>Name</th><th>Marathi</th><th>Category</th><th>Brand</th><th>Selling price</th><th>MRP</th><th>Stock</th><th>Low stock</th><th>Unit</th><th>Type</th><th>Flags</th><th>Status</th><th>Actions</th>
           </tr>
         </thead>
         <tbody id="productsTableBody"></tbody>
@@ -717,7 +717,7 @@
     });
     body.innerHTML = categories.map(category => `
       <tr class="category-divider">
-        <td colspan="9">📂 ${escapeHtml(category)} <span style="font-weight:600;color:var(--ink-soft);">(${grouped[category].length})</span></td>
+        <td colspan="14">📂 ${escapeHtml(category)} <span style="font-weight:600;color:var(--ink-soft);">(${grouped[category].length})</span></td>
       </tr>
       ${grouped[category].sort((a, b) => a.name.localeCompare(b.name)).map(productRowHtml).join('')}
     `).join('');
@@ -744,10 +744,14 @@
           ${p.image_url ? `<img class="image-preview" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}">` : '<span style="color:var(--ink-soft);">No image</span>'}
           <input class="image-input" type="file" accept="image/png,image/jpeg,image/webp" data-field="image_file">
         </td>
-        <td><input type="text" value="${escapeHtml(p.name)}" data-field="name" /></td>
+        <td><input type="text" value="${escapeHtml(p.product_name || p.name)}" data-field="name" /></td>
+        <td><input type="text" value="${escapeHtml(p.marathi_name || '')}" data-field="marathi_name" placeholder="मराठी नाव" /></td>
         <td><input type="text" value="${escapeHtml(p.category)}" data-field="category" /></td>
-        <td class="num-cell"><input type="number" step="0.01" value="${p.price}" data-field="price" /></td>
+        <td><input type="text" value="${escapeHtml(p.brand || '')}" data-field="brand" placeholder="Brand / loose" /></td>
+        <td class="num-cell"><input type="number" step="0.01" value="${p.selling_price ?? p.price ?? ''}" data-field="price" /></td>
         <td class="num-cell"><input type="number" step="0.01" value="${p.mrp ?? ''}" data-field="mrp" placeholder="—" /></td>
+        <td class="num-cell"><input type="number" step="0.001" value="${p.stock_quantity ?? 0}" data-field="stock_quantity" /></td>
+        <td class="num-cell"><input type="number" step="0.001" value="${p.low_stock_threshold ?? 5}" data-field="low_stock_threshold" /></td>
         <td><input type="text" value="${escapeHtml(p.unit)}" data-field="unit" /></td>
         <td>
           <select data-field="pricing_type">
@@ -755,10 +759,15 @@
             <option value="Fixed" ${p.pricing_type === 'Fixed' ? 'selected' : ''}>Fixed</option>
           </select>
         </td>
+        <td class="flag-list">
+          <label><input type="checkbox" data-field="is_popular" ${p.is_popular ? 'checked' : ''}/>Popular</label>
+          <label><input type="checkbox" data-field="is_offer" ${p.is_offer ? 'checked' : ''}/>Offer</label>
+          <label><input type="checkbox" data-field="is_seasonal" ${p.is_seasonal ? 'checked' : ''}/>Seasonal</label>
+        </td>
         <td>
           <div class="status-toggle">
-            <input type="checkbox" data-field="active" ${p.active ? 'checked' : ''} />
-            <span class="badge ${p.active ? 'active' : 'inactive'}">${p.active ? 'Active' : 'Hidden'}</span>
+            <input type="checkbox" data-field="active" ${(p.is_available ?? p.active) ? 'checked' : ''} />
+            <span class="badge ${(p.is_available ?? p.active) ? 'active' : 'inactive'}">${(p.is_available ?? p.active) ? 'Live' : 'Hidden'}</span>
           </div>
         </td>
         <td>
@@ -782,6 +791,13 @@
     const unit = get('unit').value.trim() || 'unit';
     const pricing_type = get('pricing_type').value;
     const active = get('active').checked;
+    const marathi_name = get('marathi_name').value.trim() || null;
+    const brand = get('brand').value.trim() || null;
+    const stock_quantity = parseFloat(get('stock_quantity').value) || 0;
+    const low_stock_threshold = parseFloat(get('low_stock_threshold').value) || 5;
+    const is_popular = get('is_popular').checked;
+    const is_offer = get('is_offer').checked;
+    const is_seasonal = get('is_seasonal').checked;
 
     if (!name || isNaN(price)){
       alert('Please enter a valid name and price.');
@@ -797,13 +813,15 @@
       return;
     }
     const { error } = await sb.from('products')
-      .update({ name, category, price, mrp, unit, pricing_type, active, image_url })
+      .update({ name, product_name: name, marathi_name, category, brand, price, selling_price: price, mrp, unit, pricing_type,
+        active, is_available: active, stock_quantity, low_stock_threshold, is_popular, is_offer, is_seasonal, image_url })
       .eq('id', id);
 
     if (error){ alert('Could not save: ' + error.message); return; }
 
     const idx = PRODUCTS.findIndex(p => p.id === id);
-    if (idx > -1) PRODUCTS[idx] = { ...PRODUCTS[idx], name, category, price, mrp, unit, pricing_type, active, image_url };
+    if (idx > -1) PRODUCTS[idx] = { ...PRODUCTS[idx], name, product_name: name, marathi_name, category, brand, price, selling_price: price, mrp, unit, pricing_type,
+      active, is_available: active, stock_quantity, low_stock_threshold, is_popular, is_offer, is_seasonal, image_url };
     if (imageFile){
       renderProducts();
       showToast('Product saved — storefront updated');
