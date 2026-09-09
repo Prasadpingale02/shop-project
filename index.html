@@ -718,18 +718,7 @@
   </div>
   <section class="home-section" id="categorySection">
     <h2><span class="section-emoji">🧺</span> <span data-i18n="categories">Categories</span></h2>
-    <div class="category-cards">
-      <button class="category-card" data-category="Grains & Flours" onclick="browseCategory('Grains & Flours')"><img alt="Rice and grains" loading="lazy"><span class="category-label">🍚 Rice & Grains</span></button>
-      <button class="category-card" data-category="Grains & Flours" onclick="browseCategory('Grains & Flours')"><img alt="Flour and atta" loading="lazy"><span class="category-label">🌾 Flour & Atta</span></button>
-      <button class="category-card" data-category="Pulses (Dal)" onclick="browseCategory('Pulses (Dal)')"><img alt="Dal and pulses" loading="lazy"><span class="category-label">🥣 Dal & Pulses</span></button>
-      <button class="category-card" data-category="Cooking Oil" onclick="browseCategory('Cooking Oil')"><img alt="Cooking oil and ghee" loading="lazy"><span class="category-label">🛢️ Oil & Ghee</span></button>
-      <button class="category-card" data-category="Essentials" onclick="browseCategory('Essentials')"><img alt="Salt and spices" loading="lazy"><span class="category-label">🧂 Salt & Spices</span></button>
-      <button class="category-card" data-category="Snacks" onclick="browseCategory('Snacks')"><img alt="Biscuits and snacks" loading="lazy"><span class="category-label">🍪 Biscuits & Snacks</span></button>
-      <button class="category-card" data-category="Beverages" onclick="browseCategory('Beverages')"><img alt="Beverages" loading="lazy"><span class="category-label">🥤 Beverages</span></button>
-      <button class="category-card" data-category="Personal Care" onclick="browseCategory('Personal Care')"><img alt="Personal care products" loading="lazy"><span class="category-label">🧼 Personal Care</span></button>
-      <button class="category-card" data-category="Household" onclick="browseCategory('Household')"><img alt="Household products" loading="lazy"><span class="category-label">🧹 Household</span></button>
-      <button class="category-card" data-category="Baby Products" onclick="browseCategory('Baby Products')"><img alt="Baby products" loading="lazy"><span class="category-label">👶 Baby Products</span></button>
-    </div>
+    <div class="category-cards" id="categoryCards"></div>
   </section>
   <section class="home-section">
     <h2><span class="section-emoji">🛒</span> <span data-i18n="howToOrder">How to Order</span></h2>
@@ -997,6 +986,11 @@
     document.getElementById('langEnglish').classList.toggle('active', language === 'en');
     document.getElementById('langMarathi').classList.toggle('active', language === 'mr');
     document.documentElement.lang = language === 'mr' ? 'mr' : 'en';
+    if (PRODUCTS.length){
+      renderCategoryImages();
+      renderDiscoverySections();
+      renderCatalog();
+    }
     localStorage.setItem('pp_language', language);
   }
 
@@ -1136,24 +1130,52 @@
     </article>`;
   }
 
+  const CATEGORY_ORDER = ['Rice','Flour','Pulses','Grains & Pulses','Edible Oil','Spices','Sugar','Salt','Tea & Coffee','Biscuits','Snacks','Breakfast','Dry Fruits','Sauces & Spreads','Dairy','Household','Personal Care','Fresh Vegetables','Fruits'];
+  const CATEGORY_MARATHI = {
+    Rice:'तांदूळ', Flour:'पीठ', Pulses:'डाळी', 'Grains & Pulses':'कडधान्ये', 'Edible Oil':'तेल',
+    Spices:'मसाले', Sugar:'साखर आणि गोड पदार्थ', Salt:'मीठ', 'Tea & Coffee':'चहा-कॉफी',
+    Biscuits:'बिस्किटे', Snacks:'स्नॅक्स', Breakfast:'नाश्ता', 'Dry Fruits':'ड्राय फ्रूट्स',
+    'Sauces & Spreads':'सॉस व इतर', Dairy:'डेअरी', Household:'घरगुती वस्तू',
+    'Personal Care':'वैयक्तिक काळजी', 'Fresh Vegetables':'ताजी भाजी', Fruits:'फळे'
+  };
+  const CATEGORY_EMOJI = {
+    Rice:'🍚', Flour:'🌾', Pulses:'🥣', 'Grains & Pulses':'🌱', 'Edible Oil':'🛢️', Spices:'🧂',
+    Sugar:'🍬', Salt:'🧂', 'Tea & Coffee':'☕', Biscuits:'🍪', Snacks:'🥨', Breakfast:'🥣',
+    'Dry Fruits':'🥜', 'Sauces & Spreads':'🥫', Dairy:'🥛', Household:'🧹',
+    'Personal Care':'🧼', 'Fresh Vegetables':'🥬', Fruits:'🍎'
+  };
   const CATEGORY_IMAGES = {
-    'Grains & Flours':'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=500&q=70',
-    'Pulses (Dal)':'https://images.unsplash.com/photo-1515543904379-3d757afe72e4?auto=format&fit=crop&w=500&q=70',
-    'Cooking Oil':'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=500&q=70',
-    'Essentials':'https://images.unsplash.com/photo-1532336414038-cf19250c5757?auto=format&fit=crop&w=500&q=70',
-    'Snacks':'https://images.unsplash.com/photo-1621939514649-280e2aa4a736?auto=format&fit=crop&w=500&q=70',
-    'Beverages':'https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=500&q=70',
+    Rice:'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=500&q=70',
+    Flour:'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=500&q=70',
+    Pulses:'https://images.unsplash.com/photo-1515543904379-3d757afe72e4?auto=format&fit=crop&w=500&q=70',
+    'Grains & Pulses':'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?auto=format&fit=crop&w=500&q=70',
+    'Edible Oil':'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=500&q=70',
+    Spices:'https://images.unsplash.com/photo-1596040033229-a9821ebd058d?auto=format&fit=crop&w=500&q=70',
+    Sugar:'https://images.unsplash.com/photo-1558642452-9d2a7deb7f62?auto=format&fit=crop&w=500&q=70',
+    Salt:'https://images.unsplash.com/photo-1518110925495-5aa3d5b65d90?auto=format&fit=crop&w=500&q=70',
+    'Tea & Coffee':'https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=500&q=70',
+    Biscuits:'https://images.unsplash.com/photo-1558961363-fa8fdf82db35?auto=format&fit=crop&w=500&q=70',
+    Snacks:'https://images.unsplash.com/photo-1621939514649-280e2aa4a736?auto=format&fit=crop&w=500&q=70',
+    Breakfast:'https://images.unsplash.com/photo-1517673132405-a56a62b18caf?auto=format&fit=crop&w=500&q=70',
+    'Dry Fruits':'https://images.unsplash.com/photo-1599599810769-bcde5a160d32?auto=format&fit=crop&w=500&q=70',
+    'Sauces & Spreads':'https://images.unsplash.com/photo-1472476443507-c7a5948772fc?auto=format&fit=crop&w=500&q=70',
+    Dairy:'https://images.unsplash.com/photo-1628088062854-d1870b4553da?auto=format&fit=crop&w=500&q=70',
+    Household:'https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&w=500&q=70',
     'Personal Care':'https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&w=500&q=70',
-    'Household':'https://images.unsplash.com/photo-1583947215259-38e31be8751f?auto=format&fit=crop&w=500&q=70',
-    'Baby Products':'https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=500&q=70'
+    'Fresh Vegetables':'https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=500&q=70',
+    Fruits:'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?auto=format&fit=crop&w=500&q=70'
   };
   function renderCategoryImages(){
-    document.querySelectorAll('.category-card').forEach(card => {
-      const image = card.querySelector('img');
-      const product = PRODUCTS.find(p => productCategoryGroup(p) === card.dataset.category && p.image_url);
-      image.src = product ? product.image_url : CATEGORY_IMAGES[card.dataset.category];
-      image.onerror = () => { image.src = CATEGORY_IMAGES[card.dataset.category]; };
-    });
+    const categories = CATEGORY_ORDER.filter(category => PRODUCTS.some(p => productCategoryGroup(p) === category));
+    const root = document.getElementById('categoryCards');
+    root.innerHTML = categories.map(category => {
+      const product = PRODUCTS.find(p => productCategoryGroup(p) === category && p.image_url);
+      const image = product ? product.image_url : CATEGORY_IMAGES[category];
+      return `<button class="category-card" data-category="${escapeHtml(category)}" onclick="browseCategory(this.dataset.category)">
+        <img src="${escapeHtml(image)}" alt="${escapeHtml(category)}" loading="lazy" onerror="this.src='${CATEGORY_IMAGES[category]}'">
+        <span class="category-label">${CATEGORY_EMOJI[category]} ${escapeHtml(category)} / ${escapeHtml(CATEGORY_MARATHI[category])}</span>
+      </button>`;
+    }).join('');
   }
   function createImageFallback(){
     const fallback = document.createElement('div');
@@ -1261,7 +1283,7 @@
       byCategory[c].push(p);
     });
 
-    const categoryOrder = ['Pulses (Dal)', 'Cooking Oil', 'Grains & Flours', 'Sugar', 'Essentials', 'General'];
+    const categoryOrder = CATEGORY_ORDER;
     const categories = Object.keys(byCategory).sort((a, b) => {
       const aIndex = categoryOrder.indexOf(a);
       const bIndex = categoryOrder.indexOf(b);
@@ -1286,14 +1308,14 @@
   function productCategoryGroup(product){
     const category = String(product.category || '').trim();
     const name = String(product.name || '').toLowerCase();
-    if (/\b(dal|urad|moong|masoor|tur|gram)\b/i.test(name) || /pulses?|dal/i.test(category)){
-      return 'Pulses (Dal)';
-    }
-    if (/oil/i.test(name) || /oil/i.test(category)) return 'Cooking Oil';
-    if (/sugar/i.test(name) || /sugar/i.test(category)) return 'Sugar';
-    if (/atta|besan|maida|rice|suji|wheat/i.test(name) || /grain|flour/i.test(category)){
-      return 'Grains & Flours';
-    }
+    const legacy = {'Rice & Grains':'Rice','Atta & Flour':'Flour','Dal & Pulses':'Pulses','Oil & Ghee':'Edible Oil','Sugar, Salt & Jaggery':'Sugar','Masala & Spices':'Spices','Biscuits & Snacks':'Snacks','Dairy & Breakfast':'Dairy','Household Cleaning':'Household'};
+    if (legacy[category]) return legacy[category];
+    if (/\b(dal|urad|moong|masoor|tur|gram)\b/i.test(name) || /pulses?|dal/i.test(category)) return 'Pulses';
+    if (/oil/i.test(name) || /oil/i.test(category)) return 'Edible Oil';
+    if (/sugar|jaggery|mishri/i.test(name) || /sugar/i.test(category)) return 'Sugar';
+    if (/salt/i.test(name)) return 'Salt';
+    if (/atta|besan|maida|rava|suji|flour|wheat/i.test(name) || /flour|atta/i.test(category)) return 'Flour';
+    if (/rice|tandul/i.test(name) || /rice/i.test(category)) return 'Rice';
     return category || 'General';
   }
 
@@ -1335,7 +1357,7 @@
       return `
         <div class="card">
           ${badgeHtml}
-          ${p.image_url ? `<img class="product-image" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy">` : '<div class="product-image product-placeholder" aria-label="Product image">🛒</div>'}
+          ${p.image_url ? `<img class="product-image" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.replaceWith(createImageFallback())">` : '<div class="product-image product-placeholder" aria-label="Product image">🛒</div>'}
           <div class="pcat">${escapeHtml(productCategoryGroup(p))}</div>
           ${detailsHtml}
           <div class="price-row"><span class="price">₹${rupees(sellingPrice)}</span><span class="unit-note">/ ${escapeHtml(p.unit || p.weight || '')}</span> ${mrpHtml} ${discount > 0 ? `<span class="discount-badge">${discount}% OFF</span>` : ''}</div>
@@ -1346,7 +1368,7 @@
       return `
         <div class="card">
           ${badgeHtml}
-          ${p.image_url ? `<img class="product-image" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy">` : '<div class="product-image product-placeholder" aria-label="Product image">🛒</div>'}
+          ${p.image_url ? `<img class="product-image" src="${escapeHtml(p.image_url)}" alt="${escapeHtml(p.name)}" loading="lazy" onerror="this.replaceWith(createImageFallback())">` : '<div class="product-image product-placeholder" aria-label="Product image">🛒</div>'}
           <div class="pcat">${escapeHtml(productCategoryGroup(p))}</div>
           ${detailsHtml}
           <div class="price-row"><span class="price">₹${rupees(sellingPrice)}</span><span class="unit-note">/ ${escapeHtml(p.unit || p.weight || '')}</span> ${mrpHtml} ${discount > 0 ? `<span class="discount-badge">${discount}% OFF</span>` : ''}</div>
@@ -2023,10 +2045,10 @@
       .limit(6);
 
     const testimonials = data && data.length ? data : [
-      { customer_name:'Ramesh, Kasoda', rating:5, comment:'Fresh groceries, fair prices and very helpful service.', created_at:'2026-08-18' },
-      { customer_name:'Sonal, Kasoda', rating:5, comment:'The WhatsApp ordering was easy and my order was ready on time.', created_at:'2026-08-24' },
-      { customer_name:'Amit, nearby village', rating:4, comment:'Convenient home delivery and good packing.', created_at:'2026-08-30' },
-      { customer_name:'Priya, Kasoda', rating:5, comment:'All the daily essentials in one place. Thank you!', created_at:'2026-09-02' }
+      { customer_name:'Ramesh, Kasoda', rating:5, comment:'Fresh groceries, fair prices and very helpful service.', date:'2026-08-18' },
+      { customer_name:'Sonal, Kasoda', rating:5, comment:'The WhatsApp ordering was easy and my order was ready on time.', date:'2026-08-24' },
+      { customer_name:'Amit, nearby village', rating:4, comment:'Convenient home delivery and good packing.', date:'2026-08-30' },
+      { customer_name:'Priya, Kasoda', rating:5, comment:'All the daily essentials in one place. Thank you!', date:'2026-09-02' }
     ];
 
     const section = document.getElementById('testimonialsSection');
@@ -2036,7 +2058,7 @@
         <div class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
         ${r.comment ? `<div class="t-comment">${escapeHtml(r.comment)}</div>` : ''}
         <div class="t-name">— ${escapeHtml(r.customer_name)}</div>
-        <div class="testimonial-date">${r.created_at ? new Date(r.created_at).toLocaleDateString('en-IN') : ''}</div>
+        <div class="testimonial-date">${(r.date || r.created_at) ? new Date(r.date || r.created_at).toLocaleDateString('en-IN') : ''}</div>
       </div>
     `).join('');
     section.style.display = '';
